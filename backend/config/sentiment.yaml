@@ -1,0 +1,11 @@
+rss_feeds:
+  - name: "Reuters Currencies"
+    url: "https://www.reutersagency.com/feed/?best-topics=currencies&post_type=best"
+  - name: "ForexLive"
+    url: "https://www.forexlive.com/rss"
+  - name: "FXStreet News"
+    url: "https://www.fxstreet.com/rss/news"
+  - name: "DailyFX"
+    url: "https://www.dailyfx.com/feeds/forex-market-news"
+
+polling_interval_minutes: 10

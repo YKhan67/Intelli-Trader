@@ -1,0 +1,19 @@
+price_data:
+  github_repo: "philipperemy/FX-1-Minute-Data"
+  pairs: ["EURUSD"]
+  retry_count: 3
+  backoff_factor: 2
+
+gdelt:
+  batch_size_days: 30
+  keywords: ["USD", "EUR", "GBP", "JPY", "Fed", "ECB", "BOE", "rate", "inflation", "NFP", "CPI", "GDP", "forex", "hawkish", "dovish"]
+  years_history: 5
+
+economic_calendar:
+  source: "investing.com"
+  impact_levels: ["HIGH", "MEDIUM"]
+  years_history: 5
+
+cot_data:
+  source: "cftc.gov"
+  report_type: "legacy_futures"

@@ -1,0 +1,9 @@
+postgres:
+  pool_size: 20
+  max_overflow: 10
+  pool_timeout: 30
+mongo:
+  max_pool_size: 100
+  min_pool_size: 10
+redis:
+  decode_responses: true

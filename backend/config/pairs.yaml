@@ -1,0 +1,25 @@
+pairs:
+  - symbol: EURUSD
+    pip_size: 0.0001
+    pip_value: 10.0
+  - symbol: GBPUSD
+    pip_size: 0.0001
+    pip_value: 10.0
+  - symbol: USDJPY
+    pip_size: 0.01
+    pip_value: 9.15
+  - symbol: USDCHF
+    pip_size: 0.0001
+    pip_value: 11.12
+  - symbol: AUDUSD
+    pip_size: 0.0001
+    pip_value: 10.0
+  - symbol: NZDUSD
+    pip_size: 0.0001
+    pip_value: 10.0
+  - symbol: USDCAD
+    pip_size: 0.0001
+    pip_value: 7.35
+  - symbol: XAUUSD
+    pip_size: 0.0001
+    pip_value: 0.01
