@@ -2,24 +2,56 @@ pairs:
   - symbol: EURUSD
     pip_size: 0.0001
     pip_value: 10.0
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: ["GBPUSD", "USDCHF"]
   - symbol: GBPUSD
     pip_size: 0.0001
     pip_value: 10.0
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: ["EURUSD"]
   - symbol: USDJPY
     pip_size: 0.01
     pip_value: 9.15
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: []
   - symbol: USDCHF
     pip_size: 0.0001
     pip_value: 11.12
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: ["EURUSD"]
   - symbol: AUDUSD
     pip_size: 0.0001
     pip_value: 10.0
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: ["NZDUSD"]
   - symbol: NZDUSD
     pip_size: 0.0001
     pip_value: 10.0
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: ["AUDUSD"]
   - symbol: USDCAD
     pip_size: 0.0001
     pip_value: 7.35
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: []
   - symbol: XAUUSD
-    pip_size: 0.0001
-    pip_value: 0.01
+    pip_size: 0.01
+    pip_value: 1.0
+    min_lot: 0.01
+    max_lot: 10.0
+    lot_step: 0.01
+    correlations: []

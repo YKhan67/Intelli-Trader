@@ -1,0 +1,29 @@
+strategy_regime_map:
+  TRENDING_UP: 
+    primary: TREND_FOLLOW
+    secondary: BREAKOUT
+  TRENDING_DOWN: 
+    primary: TREND_FOLLOW
+    secondary: BREAKOUT
+  RANGING: 
+    primary: MEAN_REVERSION
+    secondary: SCALP
+  BREAKOUT: 
+    primary: BREAKOUT
+    secondary: TREND_FOLLOW
+  REVERSAL: 
+    primary: REVERSAL
+    secondary: MEAN_REVERSION
+  VOLATILE: 
+    primary: SCALP
+    secondary: SKIP
+
+thresholds:
+  switch_confidence: 0.75
+  post_loss_confidence: 0.80
+  switch_bars_confirmation: 3
+  loss_cooldown_bars: 5
+  underperforming_winrate: 0.40
+  retire_winrate: 0.35
+  performance_window_days: 30
+  retire_window_days: 60

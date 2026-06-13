@@ -1,0 +1,46 @@
+spread_limits:
+  M1: 1.5
+  M5: 2.0
+  M15: 2.5
+  M30: 3.0
+  H1: 5.0
+  H4: 8.0
+  D1: 15.0
+
+max_risk_per_trade: 0.01  # 1%
+max_drawdown_limit: 0.10  # 10%
+min_rr_ratio: 1.5
+
+mode_multipliers:
+  aggressive: 2.0
+  normal: 1.0
+  conservative: 0.5
+
+streak_adjustments:
+  loss_streak_threshold: 3
+  loss_reduction: 0.5
+  win_streak_threshold: 5
+  win_increase: 1.25
+
+atr_sl_multipliers:
+  TREND_FOLLOW: 2.0
+  MEAN_REVERSION: 1.5
+  BREAKOUT: 1.5
+  SCALP: 1.0
+  REVERSAL: 2.0
+
+atr_tp_multipliers:
+  TREND_FOLLOW: 4.0
+  MEAN_REVERSION: 2.0
+  BREAKOUT: 3.0
+  SCALP: 1.5
+  REVERSAL: 3.0
+
+circuit_breakers:
+  daily_loss_limit: 0.02       # 2%
+  hard_daily_loss_limit: 0.03  # 3%
+  weekly_loss_limit: 0.05      # 5%
+  consecutive_losses_pause: 5
+  consecutive_losses_halt: 7
+  monthly_profit_lock_threshold: 0.08  # 8%
+  monthly_profit_protect_level: 0.05   # 5%

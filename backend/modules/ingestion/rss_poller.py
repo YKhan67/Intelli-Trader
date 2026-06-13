@@ -15,11 +15,17 @@ class RSSPoller:
         self.seen_hashes = set()
 
     async def start_polling(self):
-        print(f"Starting RSS poller with {len(self.feeds)} feeds...")
+        print(f"Starting RSS poller with {len(self.feeds)} feeds (Infinite Loop)...")
         while True:
-            tasks = [self.poll_feed(feed) for feed in self.feeds]
-            await asyncio.gather(*tasks)
+            await self.poll_once()
             await asyncio.sleep(self.interval)
+
+    async def poll_once(self):
+        """Runs a single poll across all feeds."""
+        print(f"  Polling {len(self.feeds)} news feeds...")
+        tasks = [self.poll_feed(feed) for feed in self.feeds]
+        await asyncio.gather(*tasks)
+        print("  News polling complete.")
 
     async def poll_feed(self, feed_config: Dict[str, Any]):
         name = feed_config["name"]

@@ -1,174 +1,135 @@
 import asyncio
+import os
+import httpx
 import pandas as pd
-import requests
-import time
+import lzma
+import struct
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 from sqlalchemy import select, insert, and_
 from backend.database.postgres import AsyncSessionLocal
 from backend.database.models_db import CurrencyPairDB, OHLCVBarDB, DataDownloadLogDB
-import io
-import zipfile
 
 class PriceDownloader:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.repo = config["github_repo"]
         self.pairs = config["pairs"]
-        self.base_url = f"https://raw.githubusercontent.com/{self.repo}/master"
+        self.local_path = config.get("local_data_path", "backend/data/raw/prices")
+        self.base_url = "https://datafeed.dukascopy.com/datafeed"
 
     async def get_pair_id(self, session, symbol: str) -> int:
         stmt = select(CurrencyPairDB.id).where(CurrencyPairDB.symbol == symbol)
         result = await session.execute(stmt)
         return result.scalar()
 
-    async def is_already_downloaded(self, session, pair_id: int, timeframe: str, start: datetime, end: datetime) -> bool:
-        stmt = select(DataDownloadLogDB).where(
-            and_(
-                DataDownloadLogDB.pair_id == pair_id,
-                DataDownloadLogDB.timeframe == timeframe,
-                DataDownloadLogDB.status == "SUCCESS",
-                DataDownloadLogDB.start_time <= start,
-                DataDownloadLogDB.end_time >= end
-            )
-        )
-        result = await session.execute(stmt)
-        return result.first() is not None
-
     async def download_historical(self):
+        """Production historical download: uses Dukascopy then Local Files."""
+        os.makedirs(self.local_path, exist_ok=True)
+        
         async with AsyncSessionLocal() as session:
             for symbol in self.pairs:
                 pair_id = await self.get_pair_id(session, symbol)
-                if not pair_id:
-                    print(f"Skipping {symbol}, pair not found in DB.")
-                    continue
+                if not pair_id: continue
+
+                print(f"Ingesting {symbol}...")
                 
-                # The philipperemy repo has data by year. We'll attempt last 5 years.
-                current_year = datetime.now().year
-                for year in range(current_year - 5, current_year + 1):
-                    start_date = datetime(year, 1, 1, tzinfo=timezone.utc)
-                    end_date = datetime(year, 12, 31, 23, 59, tzinfo=timezone.utc)
-                    
-                    if await self.is_already_downloaded(session, pair_id, "M1", start_date, end_date):
-                        print(f"Already have {symbol} M1 data for {year}. Skipping.")
-                        continue
+                # 1. Try Dukascopy
+                df = await self._fetch_from_dukascopy(symbol)
+                
+                # 2. Try Local CSV if Dukascopy failed
+                if df is None:
+                    local_file = os.path.join(self.local_path, f"{symbol}.csv")
+                    if os.path.exists(local_file):
+                        print(f"  Dukascopy failed. Using local file: {local_file}")
+                        df = pd.read_csv(local_file)
+                
+                if df is not None:
+                    await self.process_and_store(session, pair_id, symbol, df, "LIVE_DATA")
+                else:
+                    print(f"  CRITICAL ERROR: No real data found for {symbol}. Check connection or local folder.")
 
-                    print(f"Downloading {symbol} M1 data for {year}...")
-                    try:
-                        data = await self.fetch_with_retries(symbol, year)
-                        if data is None:
-                            print(f"  Warning: No live data found for {symbol} in {year}. Generating synthetic data for smoke test...")
-                            data = self._generate_synthetic_data(symbol, year)
-                        
-                        await self.process_and_store(session, pair_id, symbol, data, year)
-                        print(f"  Successfully processed {symbol} for {year}.")
-                    except Exception as e:
-                        print(f"Failed to download/process {symbol} for {year}: {e}")
-                        await self._log_status(session, pair_id, "M1", start_date, end_date, "FAILED", 0)
-
-    def _generate_synthetic_data(self, symbol: str, year: int) -> pd.DataFrame:
-        """Generates mock M1 data for pipeline verification."""
-        import numpy as np
-        start_ts = datetime(year, 1, 1, tzinfo=timezone.utc)
-        # Generate 1000 bars for testing instead of a full year
-        periods = 1000 
-        timestamps = [start_ts + timedelta(minutes=i) for i in range(periods)]
+    async def _fetch_from_dukascopy(self, symbol: str) -> pd.DataFrame:
+        now = datetime.now(timezone.utc)
+        all_data = []
+        api_symbol = symbol.replace("_", "").upper()
+        days_back = self.config.get("days_history", 1)
         
-        data = {
-            'timestamp': timestamps,
-            'open': np.random.uniform(1.0, 1.1, periods),
-            'high': np.random.uniform(1.1, 1.2, periods),
-            'low': np.random.uniform(0.9, 1.0, periods),
-            'close': np.random.uniform(1.0, 1.1, periods),
-            'volume': np.random.uniform(100, 1000, periods)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
-        return pd.DataFrame(data)
 
-    async def _log_status(self, session, pair_id: int, timeframe: str, start: datetime, end: datetime, status: str, count: int):
-        log = DataDownloadLogDB(
-            pair_id=pair_id,
-            timeframe=timeframe,
-            start_time=start,
-            end_time=end,
-            status=status,
-            bars_count=count
-        )
-        session.add(log)
-        await session.commit()
+        async with httpx.AsyncClient(timeout=15.0, headers=headers, follow_redirects=True) as client:
+            for day_offset in range(days_back):
+                target_day = now - timedelta(days=day_offset)
+                tasks = []
+                for hour in range(24):
+                    url = f"{self.base_url}/{api_symbol}/{target_day.year}/{target_day.month-1:02d}/{target_day.day:02d}/{hour:02d}h_ticks.bi5"
+                    tasks.append(self._download_single_hour(client, url, target_day.replace(hour=hour)))
+                
+                results = await asyncio.gather(*tasks)
+                for res in results:
+                    if res: all_data.extend(res)
 
-    async def fetch_with_retries(self, symbol: str, year: int) -> pd.DataFrame:
-        url = f"{self.base_url}/{symbol}/{symbol}_{year}.csv.zip"
-        retries = self.config.get("retry_count", 3)
-        backoff = self.config.get("backoff_factor", 2)
-        
-        for i in range(retries):
-            try:
-                response = requests.get(url, timeout=30)
-                if response.status_code == 200:
-                    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-                        with z.open(z.namelist()[0]) as f:
-                            df = pd.read_csv(f, names=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-                            return df
-                elif response.status_code == 404:
-                    # Try plain CSV if zip doesn't exist
-                    url_csv = f"{self.base_url}/{symbol}/{symbol}_{year}.csv"
-                    resp_csv = requests.get(url_csv, timeout=30)
-                    if resp_csv.status_code == 200:
-                        df = pd.read_csv(io.StringIO(resp_csv.text), names=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-                        return df
-                    return None
-            except Exception as e:
-                if i == retries - 1:
-                    raise e
-                time.sleep(backoff ** i)
+        if all_data:
+            return pd.DataFrame(all_data)
         return None
 
-    async def process_and_store(self, session, pair_id: int, symbol: str, df: pd.DataFrame, year: int):
-        # Data format: timestamp is usually 'YYYY.MM.DD HH:MM' or similar. 
-        # Need to handle specific format of FX-1-Minute-Data
+    async def _download_single_hour(self, client, url, base_ts):
+        try:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                return self._parse_bi5(resp.content, base_ts)
+        except:
+            return None
+
+    def _parse_bi5(self, content: bytes, base_ts: datetime) -> List[Dict]:
+        try:
+            decompressed = lzma.decompress(content)
+            ticks = []
+            for i in range(0, len(decompressed), 20):
+                ms_offset, ask, bid, ask_vol, bid_vol = struct.unpack(">IIIII", decompressed[i:i+20])
+                ts = base_ts.replace(minute=0, second=0, microsecond=0) + timedelta(milliseconds=ms_offset)
+                ticks.append({
+                    'timestamp': ts, 'open': bid / 100000.0, 'high': bid / 100000.0,
+                    'low': bid / 100000.0, 'close': bid / 100000.0, 'volume': bid_vol
+                })
+            return ticks
+        except:
+            return []
+
+    async def process_and_store(self, session, pair_id: int, symbol: str, df: pd.DataFrame, source: str):
+        df.columns = [c.lower() for c in df.columns]
+        if 'time' in df.columns: df.rename(columns={'time': 'timestamp'}, inplace=True)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df.set_index('timestamp', inplace=True)
-        df.sort_index(inplace=True)
         
-        timeframes = ["M1", "M5", "M15", "M30", "H1", "H4"]
+        # Resample to M1 if it's raw tick data
+        if len(df) > 10000: # Heuristic for tick data
+            df = df.resample('1min').agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
+
+        timeframes = self.config.get("timeframes", ["M1", "M5", "M15", "M30", "H1", "H4"])
         resample_map = {"M1": "1min", "M5": "5min", "M15": "15min", "M30": "30min", "H1": "1h", "H4": "4h"}
 
         for tf in timeframes:
-            print(f"  Processing {tf} for {symbol} {year}...")
-            resampled = df.resample(resample_map[tf]).agg({
-                'open': 'first',
-                'high': 'max',
-                'low': 'min',
-                'close': 'last',
-                'volume': 'sum'
-            }).dropna()
-
+            resampled = df.resample(resample_map[tf]).agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
             bars = []
             for ts, row in resampled.iterrows():
                 bars.append({
-                    "pair_id": pair_id,
-                    "timeframe": tf,
-                    "timestamp": ts.to_pydatetime().replace(tzinfo=timezone.utc),
-                    "open": row['open'],
-                    "high": row['high'],
-                    "low": row['low'],
-                    "close": row['close'],
-                    "volume": row['volume'],
-                    "spread_pips": 0.0 # Historical data usually doesn't have spread
+                    "pair_id": pair_id, "timeframe": tf, "timestamp": ts.to_pydatetime().replace(tzinfo=timezone.utc),
+                    "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'],
+                    "volume": row['volume'], "spread_pips": 0.0
                 })
 
             if bars:
-                # Batch insert
-                await session.execute(insert(OHLCVBarDB), bars)
-                
-                # Log success
-                log = DataDownloadLogDB(
-                    pair_id=pair_id,
-                    timeframe=tf,
-                    start_time=resampled.index[0].to_pydatetime().replace(tzinfo=timezone.utc),
-                    end_time=resampled.index[-1].to_pydatetime().replace(tzinfo=timezone.utc),
-                    status="SUCCESS",
-                    bars_count=len(bars)
-                )
-                session.add(log)
-                await session.commit()
+                try:
+                    await session.execute(insert(OHLCVBarDB), bars)
+                    await session.commit()
+                except:
+                    await session.rollback()
+
+        log = DataDownloadLogDB(
+            pair_id=pair_id, timeframe="ALL", start_time=df.index[0].to_pydatetime().replace(tzinfo=timezone.utc),
+            end_time=df.index[-1].to_pydatetime().replace(tzinfo=timezone.utc), status="SUCCESS", bars_count=len(df)
+        )
+        session.add(log)
+        await session.commit()

@@ -1,0 +1,45 @@
+trend:
+  ema_periods: [9, 21, 50, 200]
+
+momentum:
+  rsi_periods: [7, 14]
+  macd:
+    fast: 12
+    slow: 26
+    signal: 9
+  stoch_fast:
+    window: 5
+    smooth_window: 3
+  stoch_slow:
+    window: 14
+    smooth_window: 3
+
+volatility:
+  atr_period: 14
+  bollinger:
+    window: 20
+    window_dev: 2.0
+
+trend_strength:
+  adx_period: 14
+
+ichimoku:
+  tenkan_period: 9
+  kijun_period: 26
+  senkou_b_period: 52
+  displacement: 26
+
+levels:
+  pivot_type: "classic"
+
+smc:
+  order_blocks:
+    impulse_atr_multiplier: 3.0
+    lookback_bars: 50
+  fair_value_gaps:
+    min_gap_pips: 3.0
+  structure:
+    swing_lookback: 5
+  liquidity:
+    pip_tolerance: 2.0
+  max_age_bars: 500

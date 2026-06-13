@@ -1,0 +1,16 @@
+adx_threshold: 25
+bb_squeeze_threshold: 0.001
+atr_impulse_multiplier: 1.5
+rsi_range_low: 35
+rsi_range_high: 65
+min_indicators_for_confidence: 3
+max_regime_duration_multiplier: 0.8
+ml_model_path: "models/saved/regime_rf.joblib"
+# Average duration of regimes in bars (estimated for H1)
+historical_avg_duration:
+  TRENDING_UP: 48
+  TRENDING_DOWN: 48
+  RANGING: 72
+  BREAKOUT: 12
+  REVERSAL: 24
+  VOLATILE: 36

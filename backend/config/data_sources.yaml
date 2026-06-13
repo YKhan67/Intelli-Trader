@@ -1,18 +1,21 @@
 price_data:
-  github_repo: "philipperemy/FX-1-Minute-Data"
+  source: "github"
+  github_repo: "cloggy45/Forex-Data"
+  # Optional: Place your own downloaded CSVs here for guaranteed live data
+  local_data_path: "backend/data/raw/prices"
   pairs: ["EURUSD"]
-  retry_count: 3
-  backoff_factor: 2
+  timeframes: ["M1", "M5", "M15", "M30", "H1", "H4"]
+  days_history: 30  # Start with 30 days, then increase to 365 or 730
 
 gdelt:
   batch_size_days: 30
   keywords: ["USD", "EUR", "GBP", "JPY", "Fed", "ECB", "BOE", "rate", "inflation", "NFP", "CPI", "GDP", "forex", "hawkish", "dovish"]
-  years_history: 5
+  years_history: 2
 
 economic_calendar:
   source: "investing.com"
   impact_levels: ["HIGH", "MEDIUM"]
-  years_history: 5
+  years_history: 2
 
 cot_data:
   source: "cftc.gov"

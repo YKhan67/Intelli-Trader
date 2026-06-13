@@ -23,6 +23,7 @@ schedule
 pyaml
 PyYAML
 ta
+sentencepiece
 mplfinance
 pytest
 websockets

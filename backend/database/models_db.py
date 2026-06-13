@@ -32,7 +32,7 @@ class OHLCVBarDB(Base):
 class IndicatorDB(Base):
     __tablename__ = "indicators"
     id = Column(Integer, primary_key=True)
-    bar_id = Column(Integer, ForeignKey("ohlcv_bars.id"), nullable=False)
+    bar_id = Column(Integer, ForeignKey("ohlcv_bars.id"), nullable=False, unique=True)
     # Using JSON for simplicity as indicator set is large and mostly optional
     data = Column(JSON, nullable=False) 
 
@@ -77,6 +77,7 @@ class StrategyDecisionDB(Base):
     regime_history_id = Column(Integer, ForeignKey("regime_history.id"))
     timestamp = Column(DateTime(timezone=True), nullable=False)
     pair_id = Column(Integer, ForeignKey("currency_pairs.id"), nullable=False)
+    regime = Column(String(50), nullable=False)
     strategy = Column(String(50), nullable=False)
     timeframe = Column(String(20), nullable=False)
     confidence = Column(Float, nullable=False)

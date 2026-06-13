@@ -1,0 +1,55 @@
+scoring_matrix:
+  # Base scores for each strategy and timeframe
+  TREND_FOLLOW:
+    M5: 40
+    M15: 60
+    M30: 70
+    H1: 85
+    H4: 80
+  MEAN_REVERSION:
+    M5: 60
+    M15: 80
+    M30: 75
+    H1: 60
+    H4: 40
+  BREAKOUT:
+    M5: 70
+    M15: 85
+    M30: 80
+    H1: 70
+    H4: 60
+  SCALP:
+    M5: 90
+    M15: 70
+    M30: 40
+    H1: 20
+    H4: 10
+  REVERSAL:
+    M5: 40
+    M15: 60
+    M30: 80
+    H1: 85
+    H4: 70
+
+session_boosts:
+  LONDON:
+    M5: 5
+    M15: 10
+    H1: 15
+  NEW_YORK:
+    M5: 5
+    M15: 10
+    H1: 15
+  OVERLAP:
+    M5: 10
+    M15: 20
+    H1: 20
+  ASIAN:
+    M5: -30  # Penalty for low liquidity
+    H1: 10
+
+session_blocks:
+  ASIAN: ["M1", "M5"]
+  DEAD_ZONE: ["M1", "M5", "M15", "M30", "H1", "H4", "D1"]
+
+minimum_selection_score: 60

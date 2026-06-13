@@ -2,60 +2,54 @@ import asyncio
 import requests
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
-from sqlalchemy import insert, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from backend.database.postgres import AsyncSessionLocal
-from backend.database.models_db import EconomicCalendarDB, DataDownloadLogDB
+from backend.database.models_db import EconomicCalendarDB
 
 class CalendarScraper:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.impact_levels = config["impact_levels"]
 
     async def download_historical(self):
-        print("Starting Economic Calendar historical download...")
-        # Since scraping Investing.com directly is complex, 
-        # we demonstrate the database integration and batch processing.
+        """Production Calendar sync: Fetches real events from public API."""
+        print("Starting Economic Calendar download...")
         
-        async with AsyncSessionLocal() as session:
-            # Check if already downloaded
-            stmt = select(DataDownloadLogDB).where(DataDownloadLogDB.timeframe == "CALENDAR")
-            result = await session.execute(stmt)
-            if result.first():
-                print("Calendar data already exists. Skipping.")
-                return
-
-            events = []
-            # In a real scraper, we would loop through days/weeks and parse the HTML
-            # events = self.scrape_investing_com(...)
+        # Public URL for major economic events
+        url = "https://nfp.today/api/calendar" 
+        
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                events = self._parse_api_response(response.json())
+                if events:
+                    await self._store_events(events)
+                    print(f"    Successfully stored {len(events)} real calendar events.")
+                    return
             
-            # Mock event for demonstration
-            events.append({
-                "event_id": "inv-2023-10-12-cpi",
-                "timestamp": datetime(2023, 10, 12, 12, 30, tzinfo=timezone.utc),
-                "currency": "USD",
-                "event_name": "CPI (MoM)",
-                "impact": "HIGH",
-                "forecast": "0.3%",
-                "previous": "0.6%",
-                "actual": "0.4%",
-                "surprise": 0.1,
-                "surprise_direction": "LONG"
-            })
+            print(f"    API fetch failed (Status {response.status_code}).")
+        except Exception as e:
+            print(f"    Calendar fetch failed: {e}.")
 
-            if events:
-                await session.execute(insert(EconomicCalendarDB), events)
-                
-                log = DataDownloadLogDB(
-                    timeframe="CALENDAR",
-                    start_time=datetime.now(timezone.utc) - timedelta(days=365*5),
-                    end_time=datetime.now(timezone.utc),
-                    status="SUCCESS",
-                    bars_count=len(events)
-                )
-                session.add(log)
-                await session.commit()
-                print(f"  Inserted {len(events)} calendar events.")
+    def _parse_api_response(self, data: List[Dict]) -> List[Dict]:
+        results = []
+        for item in data:
+            try:
+                results.append({
+                    "event_id": str(item.get('id')),
+                    "timestamp": datetime.fromisoformat(item['date'].replace("Z", "+00:00")),
+                    "currency": item.get('currency', 'USD'),
+                    "event_name": item.get('event', 'Economic Event'),
+                    "impact": item.get('impact', 'MEDIUM'),
+                    "forecast": item.get('forecast'),
+                    "previous": item.get('previous'),
+                    "actual": item.get('actual')
+                })
+            except: continue
+        return results
 
-    async def refresh_live(self):
-        # Implementation for periodic updates
-        pass
+    async def _store_events(self, events: List[Dict]):
+        async with AsyncSessionLocal() as session:
+            stmt = pg_insert(EconomicCalendarDB).values(events)
+            stmt = stmt.on_conflict_do_nothing(index_elements=['event_id'])
+            await session.execute(stmt)
+            await session.commit()

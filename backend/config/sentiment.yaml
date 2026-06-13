@@ -9,3 +9,16 @@ rss_feeds:
     url: "https://www.dailyfx.com/feeds/forex-market-news"
 
 polling_interval_minutes: 10
+
+thresholds:
+  finbert_weight: 0.7
+  vader_weight: 0.3
+  min_articles_for_score: 3
+  cot_strong_bias_threshold: 25000
+  calendar:
+    pre_news_minutes: 120    # 2 hours before
+    hard_block_minutes: 30   # 30 mins before
+    post_news_minutes: 15    # 15 mins after
+    high_impact_only: true
+
+model_path: "models/finbert"
