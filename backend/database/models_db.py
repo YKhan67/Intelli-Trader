@@ -181,3 +181,14 @@ class DataDownloadLogDB(Base):
     end_time = Column(DateTime(timezone=True))
     status = Column(String(20))
     bars_count = Column(Integer)
+
+class SystemAlertDB(Base):
+    __tablename__ = "system_alerts"
+    alert_id = Column(SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    timestamp = Column(DateTime(timezone=True), nullable=False)
+    alert_type = Column(String(50), nullable=False)
+    severity = Column(String(20), nullable=False)
+    message = Column(String(255), nullable=False)
+    pair_id = Column(Integer, ForeignKey("currency_pairs.id"))
+    auto_resolved = Column(Boolean, default=False)
+    resolved_at = Column(DateTime(timezone=True))

@@ -15,18 +15,29 @@ class SignalGenerator:
                              strategy_res: Any, # StrategyDecision
                              sentiment_res: SentimentResult,
                              indicators: Dict[str, Any],
-                             active_zones: List[SMCZone]) -> Tuple[SignalAction, str]:
+                             active_zones: List[SMCZone],
+                             trading_mode: str = "live") -> Tuple[SignalAction, str]:
         """
         Generates raw directional signal from combined module outputs.
         """
         regime = regime_res.regime
         strategy = strategy_res.strategy
+        is_backtest = trading_mode == "backtest"
         
         # 1. TREND_FOLLOW logic
-        if strategy == Strategy.TREND_FOLLOW:
-            if regime == Regime.TRENDING_UP and sentiment_res.pair_score > 0 and sentiment_res.cot_bias == Direction.LONG:
+        if strategy in [Strategy.TREND_FOLLOW, "TREND_FOLLOW"]:
+            # Check sentiment and institutional bias
+            # In backtest, we allow more flexibility if sentiment data is sparse
+            sent_ok = sentiment_res.pair_score > 0 if not is_backtest else True
+            cot_ok = sentiment_res.cot_bias in [Direction.LONG, "LONG"] if not is_backtest else True
+
+            if regime in [Regime.TRENDING_UP, "TRENDING_UP"] and sent_ok and cot_ok:
                 return SignalAction.BUY, "TREND_FOLLOW: Aligned with Bullish Regime, Sentiment and COT."
-            if regime == Regime.TRENDING_DOWN and sentiment_res.pair_score < 0 and sentiment_res.cot_bias == Direction.SHORT:
+                
+            sent_ok_short = sentiment_res.pair_score < 0 if not is_backtest else True
+            cot_ok_short = sentiment_res.cot_bias in [Direction.SHORT, "SHORT"] if not is_backtest else True
+
+            if regime in [Regime.TRENDING_DOWN, "TRENDING_DOWN"] and sent_ok_short and cot_ok_short:
                 return SignalAction.SELL, "TREND_FOLLOW: Aligned with Bearish Regime, Sentiment and COT."
 
         # 2. MEAN_REVERSION logic

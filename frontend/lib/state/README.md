@@ -1,3 +1,1 @@
-# State
-Riverpod state management providers and logic.
-Manages the reactive state of the application.
+/// README: Riverpod providers for centralized state management.

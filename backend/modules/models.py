@@ -14,6 +14,8 @@ class CurrencyPair(str, Enum):
     AUDUSD = "AUDUSD"
     NZDUSD = "NZDUSD"
     USDCAD = "USDCAD"
+    XAUUSD = "XAUUSD"
+    BTCUSD = "BTCUSD"
 
 class Timeframe(str, Enum):
     M1 = "M1"
@@ -288,10 +290,13 @@ class TradeDecision(BaseModel):
     lot_size: Optional[float] = Field(None, gt=0, description="Calculated lot size")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Overall confidence in the decision")
     reason: str = Field(..., description="Brief explanation for the decision")
+    timeframe_scores: Dict[str, float] = Field(default_factory=dict, description="Score for each timeframe evaluated")
     regime_confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence from Regime module")
     strategy_confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence from Strategy module")
     sentiment_score: float = Field(..., ge=-1.0, le=1.0, description="Score from Sentiment module")
     risk_score: float = Field(..., ge=0.0, le=1.0, description="Score from Risk module")
+    bars_in_regime: int = Field(default=0)
+    duration_warning: bool = Field(default=False)
 
 class BackendSignal(BaseModel):
     model_config = ConfigDict(use_enum_values=True)

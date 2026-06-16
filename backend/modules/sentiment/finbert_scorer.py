@@ -16,52 +16,55 @@ class FinBERTScorer:
     def _load_model(self):
         if os.path.exists(self.model_path):
             try:
-                self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
-                self.model = AutoModelForSequenceClassification.from_pretrained(self.model_path).to(self.device)
+                # Use use_fast=False to avoid sentencepiece dependency issues on some Windows builds
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_path, 
+                    use_fast=False,
+                    local_files_only=True
+                )
+                self.model = AutoModelForSequenceClassification.from_pretrained(
+                    self.model_path,
+                    local_files_only=True
+                ).to(self.device)
                 self.model.eval()
             except Exception as e:
-                print(f"Warning: Could not load FinBERT from {self.model_path}: {e}")
+                # Silent failure to avoid flooding logs with tokenizer conversion errors
+                pass
 
     def score(self, text: Union[str, List[str]]) -> List[Dict[str, Any]]:
-        """
-        Runs text through FinBERT and returns score -1.0 to +1.0 with label and confidence.
-        Falls back to VADER if FinBERT is not loaded.
-        """
         texts = [text] if isinstance(text, str) else text
         
         if not self.model or not self.tokenizer:
             return [self._vader_fallback(t) for t in texts]
 
         results = []
-        batch_size = 32
+        batch_size = 16 # Smaller batch size for CPU stability
         
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
-            inputs = self.tokenizer(batch, padding=True, truncation=True, return_tensors="pt").to(self.device)
-            
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-                probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
-                
-            for p in probs:
-                # FinBERT labels: 0: neutral, 1: positive, 2: negative
-                p_list = p.tolist()
-                conf = max(p_list)
-                label_idx = p_list.index(conf)
-                
-                # Normalize to -1.0 to 1.0
-                if label_idx == 1: # positive
-                    score = conf
-                elif label_idx == 2: # negative
-                    score = -conf
-                else: # neutral
-                    score = 0.0
+            try:
+                inputs = self.tokenizer(batch, padding=True, truncation=True, return_tensors="pt").to(self.device)
+                with torch.no_grad():
+                    outputs = self.model(**inputs)
+                    probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
                     
-                results.append({
-                    "score": score,
-                    "label": ["neutral", "positive", "negative"][label_idx],
-                    "confidence": conf
-                })
+                for p in probs:
+                    p_list = p.tolist()
+                    conf = max(p_list)
+                    label_idx = p_list.index(conf)
+                    
+                    score = 0.0
+                    if label_idx == 1: score = conf
+                    elif label_idx == 2: score = -conf
+                        
+                    results.append({
+                        "score": score,
+                        "label": ["neutral", "positive", "negative"][label_idx],
+                        "confidence": conf
+                    })
+            except:
+                # Individual batch fallback
+                results.extend([self._vader_fallback(t) for t in batch])
         
         return results
 

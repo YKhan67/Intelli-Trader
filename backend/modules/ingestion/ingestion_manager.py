@@ -36,13 +36,12 @@ class IngestionManager:
     async def run_live(self):
         print("=== STARTING LIVE DATA INGESTION ===")
         # Live mode runs RSS poller and periodic updates
-        # RSS poller runs forever
         asyncio.create_task(self.rss_poller.start_polling())
         
-        # Periodic calendar refresh could be another task
-        # asyncio.create_task(self.calendar_sc.refresh_live())
+        # Start periodic calendar coverage check
+        asyncio.create_task(self.calendar_sc.run_periodic_check(interval_hours=12))
         
-        print("Live ingestion background tasks started.")
+        print("Live ingestion background tasks started (RSS & Calendar).")
 
     async def report_freshness(self):
         # Implementation to check last entries in DB

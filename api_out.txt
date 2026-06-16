@@ -1,0 +1,26 @@
+Main: Starting server on 8007...
+Postgres Health Check Failed: Not an executable object: 'SELECT 1'
+Warning: Could not load FinBERT from D:\prj\Intelli-Trader\backend\modules\sentiment\../../models/finbert: Couldn't instantiate the backend tokenizer from one of: 
+(1) a `tokenizers` library serialization file, 
+(2) a slow tokenizer instance to convert or 
+(3) an equivalent slow tokenizer class to instantiate and convert. 
+You need to have sentencepiece or tiktoken installed to convert a slow tokenizer to a fast one.
+Warning: Could not load FinBERT from D:\prj\Intelli-Trader\backend\modules\sentiment\../../models/finbert: Couldn't instantiate the backend tokenizer from one of: 
+(1) a `tokenizers` library serialization file, 
+(2) a slow tokenizer instance to convert or 
+(3) an equivalent slow tokenizer class to instantiate and convert. 
+You need to have sentencepiece or tiktoken installed to convert a slow tokenizer to a fast one.
+=== STARTING LIVE DATA INGESTION ===
+Live ingestion background tasks started.
+Starting continuous article processing...
+Starting RSS poller with 4 feeds (Infinite Loop)...
+  Polling 4 news feeds...
+  Polling feed: Reuters Currencies
+  Polling feed: ForexLive
+  Polling feed: FXStreet News
+  Polling feed: DailyFX
+Ingesting EURUSD...
+Sentiment aggregation complete.
+  News polling complete.
+Postgres Health Check Failed: Not an executable object: 'SELECT 1'
+INFO:     127.0.0.1:57949 - "GET /system/status HTTP/1.1" 200 OK

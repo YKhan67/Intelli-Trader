@@ -10,6 +10,7 @@ from .stop_loss_calculator import StopLossCalculator
 from .take_profit_calculator import TakeProfitCalculator
 from .circuit_breakers import CircuitBreakers
 from .correlation_checker import CorrelationChecker
+from backend.database.redis_client import get_redis_client
 
 logger = logging.getLogger("RiskManager")
 
@@ -21,12 +22,15 @@ class RiskManager:
             self.config = yaml.safe_load(f)
         with open(os.path.join(config_dir, "pairs.yaml"), "r") as f:
             self.pairs_config = yaml.safe_load(f)
+        with open(os.path.join(config_dir, "learning.yaml"), "r") as f:
+            self.learning_config = yaml.safe_load(f)
             
         self.sizer = PositionSizer(self.config, self.pairs_config)
         self.sl_calc = StopLossCalculator(self.config)
         self.tp_calc = TakeProfitCalculator(self.config)
         self.breakers = CircuitBreakers(self.config)
         self.correlation = CorrelationChecker(self.pairs_config)
+        self.redis = get_redis_client()
 
     async def calculate(self, 
                         pair: str, 
@@ -82,7 +86,14 @@ class RiskManager:
             lot_size *= corr_multiplier
             logger.info(f"Correlated exposure detected for {pair}. Reducing lot size to {lot_size}")
 
-        # 7. Final Risk Score (0.0 - 1.0)
+        # 7. Anomaly Check (From Continuous Learner)
+        is_anomalous = await self.redis.get(f"circuit:anomaly_active:{pair}")
+        if is_anomalous:
+            multiplier = self.learning_config.get('learner', {}).get('anomaly', {}).get('risk_multiplier', 0.25)
+            lot_size *= multiplier
+            logger.warning(f"ANOMALY MODE ACTIVE for {pair}. Reducing lot size by {multiplier}x to {lot_size}")
+
+        # 8. Final Risk Score (0.0 - 1.0)
         risk_score = self._calculate_risk_score(halts, is_corr, atr, indicators.get('close'))
 
         # 8. Build Result

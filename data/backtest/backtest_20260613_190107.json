@@ -1,0 +1,1 @@
+{'metrics': {'total_trades': 0, 'net_pnl': 0}, 'monte_carlo': {}, 'decay_alerts': [], 'recommendation': 'NEEDS_RETRAINING', 'reasons': ['Overall win rate too low.'], 'trade_count': 0}

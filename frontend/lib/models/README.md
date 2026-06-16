@@ -1,3 +1,1 @@
-# Models
-Dart data models representing the domain objects used in the application.
-Includes serialization and deserialization logic.
+/// README: Data models mirroring backend contracts (Signals, Trades, Metrics, Alerts).
