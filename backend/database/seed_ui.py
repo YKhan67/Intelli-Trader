@@ -17,7 +17,7 @@ logger = logging.getLogger("DataIngestor")
 
 async def run_real_ingestion():
     print("\n" + "="*50)
-    print("INSTITUTIONAL MASS DATA INGESTOR")
+    print("INSTITUTIONAL MASS DATA INGESTOR (VECTORIZED)")
     print("="*50)
     
     try:
@@ -26,31 +26,31 @@ async def run_real_ingestion():
     except:
         days = 30
 
-    print(f"\n[PHASE 1] Initializing High-Concurrency Pipelines for {days} days...")
+    print(f"\n[PHASE 1] Initializing Vectorized Pipeline for {days} days...")
     ingestion = IngestionManager()
     ingestion.price_dl.config["days_history"] = days
     
-    # Run the optimized concurrent downloader
+    # Run the optimized concurrent downloader and vectorized resampler
     await ingestion.price_dl.download_historical()
     
     print(f"\n[PHASE 2] Syncing Economic Calendar...")
     await ingestion.calendar_sc.download_historical()
     
-    print("\n[PHASE 3] Generating Multi-Timeframe Signals...")
+    print("\n[PHASE 3] Generating AI Signals (Vectorized Engine)...")
     engine = get_engine()
-    # All 9 pairs
     pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
     
     for pair in pairs:
         print(f"  Calculating Signals for {pair}...")
         for tf in ["M15", "H1", "H4"]:
             try:
-                # Use skip_sync=True because Phase 1 just finished downloading everything
+                # Use skip_sync=True because Phase 1 handled the entire vectorized state
                 await engine.run_pair_cycle(pair, tf, skip_sync=True)
-            except: pass
+            except Exception as e:
+                logger.error(f"  Error calculating signals for {pair} {tf}: {e}")
 
     print("\n" + "="*50)
-    print(f"COMPLETE: Live Database Synchronized.")
+    print(f"COMPLETE: Live Database Synchronized via Vectorized Engine.")
     print("="*50)
 
 if __name__ == "__main__":

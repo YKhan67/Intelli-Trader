@@ -3,6 +3,7 @@ import os
 import yaml
 import logging
 import uuid
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 
@@ -27,6 +28,8 @@ from .signal_generator import SignalGenerator
 from .confidence_aggregator import ConfidenceAggregator
 from .validation import SignalValidator
 
+from backend.modules.learner.model_versioner import ModelVersioner
+
 logger = logging.getLogger("DecisionEngine")
 
 class DecisionEngine:
@@ -44,13 +47,23 @@ class DecisionEngine:
         self.signal_gen = SignalGenerator()
         self.confidence_aggregator = ConfidenceAggregator(self.config)
         self.validator = SignalValidator()
-        self.anomaly_detector = AnomalyDetector(self.config) # Added
+        self.anomaly_detector = AnomalyDetector(self.config)
         
         self.redis = get_redis_client()
+        self._current_versions = {}
+
+    async def reload_models(self):
+        """Loads latest LIVE versions of all module models."""
+        modules = ["Regime Classifier", "Strategy Selector", "Timeframe Scorer"]
+        for m in modules:
+            ver = await ModelVersioner.get_latest_live_model(m)
+            if ver:
+                self._current_versions[m] = ver.version
+                logger.info(f"Loaded {m} version {ver.version}")
 
     async def run_pipeline(self, 
                             pair: str, 
-                            df: Any, # OHLCV DataFrame
+                            df: Any, 
                             indicators: Dict[str, Any],
                             active_zones: Any,
                             account_balance: float,
@@ -64,170 +77,123 @@ class DecisionEngine:
         
         try:
             current_ts = df.index[-1]
-            
-            # 0. Ensure indicators has 'close' for risk calculations
             if 'close' not in indicators:
                 indicators['close'] = df['close'].iloc[-1]
+            
+            # Safety: Ensure ATR exists for risk management
+            if 'atr_14' not in indicators or indicators['atr_14'] is None:
+                indicators['atr_14'] = 0.0020 if "JPY" not in pair else 0.20
 
-            # 0b. Anomaly Detection
+            # 1. Pipeline Analysis
             is_anomalous = await self.anomaly_detector.check_anomaly(indicators, pair)
-
-            # 1. Regime Classifier
             regime_res = await self.regime_classifier.classify(pair, "H1", df, indicators)
             
-            # 2. State Lookups (for Strategy Selector)
-            # In production, these come from Redis/DB
-            raw_cooldown = await self.redis.get(f"state:loss_cooldown:{pair}")
-            bars_since_last_loss = int(raw_cooldown) if raw_cooldown else 99
-
-            last_trade_result = await self.redis.get(f"state:last_result:{pair}")
-            last_trade_result = float(last_trade_result) if last_trade_result else None
+            bars_since_last_loss = 99
+            last_trade_result = None
+            try:
+                raw_cooldown = await self.redis.get(f"state:loss_cooldown:{pair}")
+                if raw_cooldown: bars_since_last_loss = int(raw_cooldown)
+                raw_res = await self.redis.get(f"state:last_result:{pair}")
+                if raw_res: last_trade_result = float(raw_res)
+            except: pass
             
-            # Detect Session
             from backend.modules.timeframe.session_detector import SessionDetector
             session_detector = SessionDetector()
             current_session = await session_detector.get_current_session(current_ts)
 
-            # 3. Strategy Selector
+            # 2. Decision Logic
             strategy_decision = await self.strategy_selector.select(
-                regime_result=regime_res,
-                is_trade_open=len(open_trades) > 0,
-                last_trade_result=last_trade_result,
-                pair=pair,
-                session=current_session,
-                bars_since_regime_start=regime_res.bars_in_regime,
-                bars_since_last_loss=bars_since_last_loss
+                regime_result=regime_res, is_trade_open=len(open_trades) > 0,
+                last_trade_result=last_trade_result, pair=pair, session=current_session,
+                bars_since_regime_start=regime_res.bars_in_regime, bars_since_last_loss=bars_since_last_loss
             )
 
-            # 4. Timeframe Selector
             current_spread = indicators.get('spread_pips', 1.5)
             tf_selection = await self.timeframe_selector.select(
-                strategy_decision=strategy_decision,
-                regime_result=regime_res,
-                current_spread_pips=current_spread,
-                is_trade_open=len(open_trades) > 0,
-                dt=current_ts
+                strategy_decision=strategy_decision, regime_result=regime_res,
+                current_spread_pips=current_spread, is_trade_open=len(open_trades) > 0, dt=current_ts
             )
 
-            # 5. Sentiment Manager
             sentiment_res = await self.sentiment_manager.get_sentiment(pair)
-
-            # 6. Risk Manager
+            
             risk_params = await self.risk_manager.calculate(
-                pair=pair,
-                direction=SignalAction.HOLD, # Initial
-                strategy=strategy_decision.strategy,
-                timeframe=tf_selection.selected_timeframe,
-                account_balance=account_balance,
-                open_trades=open_trades,
-                trading_mode=trading_mode,
-                indicators=indicators
+                pair=pair, direction=SignalAction.HOLD, strategy=strategy_decision.strategy,
+                timeframe=tf_selection.selected_timeframe, account_balance=account_balance,
+                open_trades=open_trades, trading_mode=trading_mode, indicators=indicators
             )
 
-            # 7. Signal Generator
             raw_action, raw_reason = self.signal_gen.generate_raw_signal(
-                regime_res=regime_res,
-                strategy_res=strategy_decision,
-                sentiment_res=sentiment_res,
-                indicators=indicators,
-                active_zones=active_zones,
-                trading_mode=trading_mode
+                regime_res=regime_res, strategy_res=strategy_decision,
+                sentiment_res=sentiment_res, indicators=indicators,
+                active_zones=active_zones, trading_mode=trading_mode
             )
             
-            # Update risk params if we have a real action
             if raw_action != SignalAction.HOLD:
                 risk_params = await self.risk_manager.calculate(
-                    pair=pair,
-                    direction=raw_action,
-                    strategy=strategy_decision.strategy,
-                    timeframe=tf_selection.selected_timeframe,
-                    account_balance=account_balance,
-                    open_trades=open_trades,
-                    trading_mode=trading_mode,
-                    indicators=indicators
+                    pair=pair, direction=raw_action, strategy=strategy_decision.strategy,
+                    timeframe=tf_selection.selected_timeframe, account_balance=account_balance,
+                    open_trades=open_trades, trading_mode=trading_mode, indicators=indicators
                 )
 
-            # 7. Confidence Aggregator
-            final_conf, breakdown = self.confidence_aggregator.calculate_final_confidence(
-                regime_conf=regime_res.confidence,
-                strategy_conf=strategy_decision.confidence,
-                timeframe_score=tf_selection.score_breakdown.get(tf_selection.selected_timeframe, 0),
-                sentiment_score=sentiment_res.pair_score,
-                risk_score=risk_params.risk_score
+            # Fix: Handle both Enum and String for selected_timeframe
+            tf_key = str(tf_selection.selected_timeframe)
+            if hasattr(tf_selection.selected_timeframe, 'value'):
+                tf_key = tf_selection.selected_timeframe.value
+
+            final_conf, _ = self.confidence_aggregator.calculate_final_confidence(
+                regime_conf=regime_res.confidence, strategy_conf=strategy_decision.confidence,
+                timeframe_score=tf_selection.score_breakdown.get(tf_key, 0),
+                sentiment_score=sentiment_res.pair_score, risk_score=risk_params.risk_score
             )
             
-            # 8. Validation
-            # Check if duplicate (same pair and direction already open)
             is_dup = any(t['pair'] == pair and t['action'] == raw_action for t in open_trades)
-            
             validation_passed, failed_checks = self.validator.validate_signal(
-                action=raw_action,
-                regime_res=regime_res,
-                tf_selection=tf_selection,
-                sentiment_res=sentiment_res,
-                risk_params=risk_params,
-                is_duplicate=is_dup
+                action=raw_action, regime_res=regime_res, tf_selection=tf_selection,
+                sentiment_res=sentiment_res, risk_params=risk_params, is_duplicate=is_dup
             )
 
-            # Final Action Decision
             min_conf = self.config.get('minimum_signal_confidence', 0.70)
-            if is_anomalous:
-                min_conf = 0.85
-                logger.warning(f"Raising confidence threshold to {min_conf} due to anomaly in {pair}")
-                
+            if is_anomalous: min_conf = 0.85
             final_action = raw_action if validation_passed and final_conf >= min_conf else SignalAction.HOLD
-            
+
             reason = f"{raw_reason} Validation Passed: {validation_passed}. "
             if failed_checks:
                 reason += f"Blocks: {', '.join(failed_checks)}"
 
-            # 9. Assemble Result
+            # 3. Assemble Signal
+            # For Pydantic gt=0 fields, ensure we pass None instead of 0.0 if HOLD
+            sl_price = risk_params.stop_loss_price if final_action != SignalAction.HOLD else None
+            tp_price = risk_params.take_profit_price if final_action != SignalAction.HOLD else None
+            l_size = risk_params.lot_size if final_action != SignalAction.HOLD else None
+            e_price = indicators.get('close') if indicators.get('close', 0) > 0 else None
+
             trade_decision = TradeDecision(
                 timestamp=datetime.now(timezone.utc),
-                pair=pair,
-                action=final_action,
-                strategy=strategy_decision.strategy,
-                timeframe=tf_selection.selected_timeframe,
-                session=tf_selection.session,
-                entry_price=indicators.get('close'),
-                stop_loss=risk_params.stop_loss_price,
-                take_profit=risk_params.take_profit_price,
-                lot_size=risk_params.lot_size,
-                confidence=final_conf,
-                reason=reason,
-                timeframe_scores=tf_selection.score_breakdown,
-                regime_confidence=regime_res.confidence,
-                strategy_confidence=strategy_decision.confidence,
-                sentiment_score=sentiment_res.pair_score,
-                risk_score=risk_params.risk_score,
-                bars_in_regime=regime_res.bars_in_regime,
-                duration_warning=regime_res.duration_warning
+                pair=pair, action=final_action, strategy=strategy_decision.strategy,
+                timeframe=tf_selection.selected_timeframe, session=tf_selection.session,
+                entry_price=e_price, 
+                stop_loss=sl_price if sl_price and sl_price > 0 else None,
+                take_profit=tp_price if tp_price and tp_price > 0 else None,
+                lot_size=l_size if l_size and l_size > 0 else None,
+                confidence=final_conf, reason=reason, timeframe_scores=tf_selection.score_breakdown,
+                regime_confidence=regime_res.confidence, strategy_confidence=strategy_decision.confidence,
+                sentiment_score=sentiment_res.pair_score, risk_score=risk_params.risk_score,
+                bars_in_regime=regime_res.bars_in_regime, duration_warning=regime_res.duration_warning
             )
 
             signal = BackendSignal(
-                signal_id=uuid.uuid4(),
-                generated_at=df.index[-1] if is_backtest else datetime.now(timezone.utc),
-                pair=pair,
-                trade_decision=trade_decision,
-                regime_result=regime_res,
-                sentiment_result=sentiment_res,
-                risk_params=risk_params,
-                model_version="1.0.0",
-                is_valid=validation_passed,
-                expires_at=datetime.now(timezone.utc) + timedelta(minutes=120) # 2 hours
+                signal_id=uuid.uuid4(), generated_at=datetime.now(timezone.utc),
+                pair=pair, trade_decision=trade_decision, regime_result=regime_res,
+                sentiment_result=sentiment_res, risk_params=risk_params,
+                model_version="1.0.0", is_valid=validation_passed,
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=120)
             )
 
-            # Store in Redis with timeframe specificity
-            cache_key = f"signal:{pair}:{tf_selection.selected_timeframe.value}"
-            await self.redis.set(cache_key, signal.model_dump_json(), ex=7200) # 2 hour cache
-            
-            # Also keep a pointer to the "last" signal for general dashboard lookup
-            await self.redis.set(f"signal:{pair}:latest", signal.model_dump_json()) # Persistent fallback across weekends
-            
-            end_time = asyncio.get_event_loop().time()
-            processing_duration = end_time - start_time
-            if processing_duration > self.config.get('processing_timeout_seconds', 10):
-                logger.warning(f"Processing for {pair} took {processing_duration:.2f}s (Limit: 10s)")
+            try:
+                cache_key = f"signal:{pair}:{tf_key}"
+                await self.redis.set(cache_key, signal.model_dump_json(), ex=7200)
+                await self.redis.set(f"signal:{pair}:latest", signal.model_dump_json())
+            except: pass
 
             return signal
 
@@ -236,34 +202,14 @@ class DecisionEngine:
             return self._build_hold_signal(pair, str(e))
 
     def _build_hold_signal(self, pair: str, error_msg: str) -> BackendSignal:
-        """Builds a placeholder signal with HOLD action on error."""
         now = datetime.now(timezone.utc)
-        
-        # We create a minimal TradeDecision
         decision = TradeDecision(
-            timestamp=now,
-            pair=pair,
-            action=SignalAction.HOLD,
-            strategy=Strategy.SKIP,
-            timeframe=Timeframe.H1,
-            session=Session.DEAD_ZONE,
-            confidence=0.0,
-            reason=f"PIPELINE_ERROR: {error_msg}",
-            regime_confidence=0.0,
-            strategy_confidence=0.0,
-            sentiment_score=0.0,
-            risk_score=1.0
+            timestamp=now, pair=pair, action=SignalAction.HOLD, strategy=Strategy.SKIP,
+            timeframe=Timeframe.H1, session=Session.DEAD_ZONE, confidence=0.0,
+            reason=f"ERROR: {error_msg}", regime_confidence=0.0, strategy_confidence=0.0,
+            sentiment_score=0.0, risk_score=1.0
         )
-        
         return BackendSignal(
-            signal_id=uuid.uuid4(),
-            generated_at=now,
-            pair=pair,
-            trade_decision=decision,
-            regime_result=None, # This will require model update to allow None
-            sentiment_result=None,
-            risk_params=None,
-            model_version="error",
-            is_valid=False,
-            expires_at=now + timedelta(minutes=60)
+            signal_id=uuid.uuid4(), generated_at=now, pair=pair, trade_decision=decision,
+            model_version="error", is_valid=False, expires_at=now + timedelta(minutes=60)
         )

@@ -18,5 +18,15 @@ active_pairs:
   - USDCHF
   - USDCAD
   - NZDUSD
+  - XAUUSD
+  - BTCUSD
+
+pair_metadata:
+  BTCUSD:
+    pip_size: 1.0
+    pip_value: 1.0
+  XAUUSD:
+    pip_size: 0.01
+    pip_value: 1.0
 
 default_timeframe: "H1"

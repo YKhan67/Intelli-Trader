@@ -44,6 +44,10 @@ class ForexAIEngine:
         if self._running: return
         self._running = True
         logger.info("ForexAI Engine launching background tasks...")
+        
+        # Load intelligence from Section 1
+        await self.decision_engine.reload_models()
+
         asyncio.create_task(self.ingestion.run_live())
         asyncio.create_task(self.processor.run_continuous(interval=30))
         asyncio.create_task(self.aggregator.run_periodic(interval=600))
@@ -66,26 +70,26 @@ class ForexAIEngine:
             pid = await self._get_pid(pair)
             if not pid: return
 
-            # 1. Only Sync if not skipped (prevents Phase 3 loops in seed_ui)
+            # 1. Only Sync if not skipped
             if not skip_sync:
                 await self.ingestion.price_dl._fill_live_gaps(pair, pid, datetime.now(timezone.utc))
 
-            # 2. Ensure technical indicators are calculated for this timeframe
+            # 2. Update Indicators and SMC Zones
             await self.indicators.calculate_all(pair, timeframe, lookback_bars=300)
+            active_zones = await self.smc.update_zones(pair, timeframe, lookback_bars=200)
 
-            # 3. Try to fetch the latest state (H1, H4, etc.)
-            state = await self._fetch_latest_state(pair, timeframe)
+            # 3. Fetch latest state from DB
+            state = await self._fetch_latest_state(pid, timeframe)
             
-            # 4. If candles missing, attempt emergency resampling from M1
+            # 4. If candles missing, attempt emergency resampling
             if state is None:
                 logger.info(f"  [{pair}] Rebuilding {timeframe} bars from M1...")
                 await self.ingestion.price_dl.resample_timeframes(pid)
-                # Re-calculate indicators after resampling
                 await self.indicators.calculate_all(pair, timeframe, lookback_bars=300)
-                state = await self._fetch_latest_state(pair, timeframe)
+                state = await self._fetch_latest_state(pid, timeframe)
 
             if state is None:
-                logger.warning(f"  [{pair} {timeframe}] Database gap too large. Ensure Phase 1 finished.")
+                logger.warning(f"  [{pair} {timeframe}] Database gap. Run Phase 1 sync.")
                 return
 
             df, indicators = state
@@ -93,7 +97,7 @@ class ForexAIEngine:
             
             await self.decision_engine.run_pipeline(
                 pair=pair, df=df, indicators=indicators,
-                active_zones=[], account_balance=10000.0, 
+                active_zones=active_zones, account_balance=10000.0, 
                 open_trades=open_trades, trading_mode="live"
             )
         except Exception as e:
@@ -104,17 +108,34 @@ class ForexAIEngine:
             res = await session.execute(select(CurrencyPairDB.id).where(CurrencyPairDB.symbol == symbol))
             return res.scalar()
 
-    async def _fetch_latest_state(self, pair: str, timeframe: str):
+    async def _fetch_latest_state(self, pair_id, timeframe: str):
         async with AsyncSessionLocal() as session:
-            stmt = select(OHLCVBarDB).where(
-                and_(OHLCVBarDB.timeframe == timeframe)
-            ).order_by(OHLCVBarDB.timestamp.desc()).limit(100)
+            # JOIN with indicators to get both candles and tech data
+            stmt = select(OHLCVBarDB, IndicatorDB.data).outerjoin(
+                IndicatorDB, OHLCVBarDB.id == IndicatorDB.bar_id
+            ).where(
+                and_(OHLCVBarDB.pair_id == pair_id, OHLCVBarDB.timeframe == timeframe)
+            ).order_by(OHLCVBarDB.timestamp.desc()).limit(200)
+            
             res = await session.execute(stmt)
-            rows = res.scalars().all()
+            rows = res.all()
             if len(rows) < 50: return None
-            df = pd.DataFrame([{'close': r.close, 'timestamp': r.timestamp} for r in rows[::-1]])
+            
+            # Chronological order for Pandas
+            rows = rows[::-1]
+            
+            df = pd.DataFrame([{
+                'timestamp': r[0].timestamp,
+                'open': r[0].open,
+                'high': r[0].high,
+                'low': r[0].low,
+                'close': r[0].close,
+                'volume': r[0].volume
+            } for r in rows])
             df.set_index('timestamp', inplace=True)
-            return df, {}
+            
+            latest_indicators = rows[-1][1] if rows[-1][1] else {}
+            return df, latest_indicators
 
     async def _resample_missing_data(self, pair_id, timeframe):
         """Emergency resampling: Creates H1/H4 bars from M1 history if missing."""
