@@ -10,29 +10,38 @@ _$BackendSignalImpl _$$BackendSignalImplFromJson(Map<String, dynamic> json) =>
     _$BackendSignalImpl(
       signalId: json['signal_id'] as String,
       generatedAt: DateTime.parse(json['generated_at'] as String),
-      pair: const CurrencyPairConverter().fromJson(json['pair'] as String),
-      action: const SignalActionConverter().fromJson(json['action'] as String),
-      strategy: const StrategyConverter().fromJson(json['strategy'] as String),
-      timeframe:
-          const TimeframeConverter().fromJson(json['timeframe'] as String),
-      session: const SessionConverter().fromJson(json['session'] as String),
-      entryPrice: (json['entry_price'] as num).toDouble(),
-      stopLoss: (json['stop_loss'] as num).toDouble(),
-      takeProfit: (json['take_profit'] as num).toDouble(),
-      lotSize: (json['lot_size'] as num).toDouble(),
-      confidence: (json['confidence'] as num).toDouble(),
-      reason: json['reason'] as String,
+      pair: const CurrencyPairConverter().fromJson(json['pair']),
+      action: const SignalActionConverter().fromJson(json['action']),
+      strategy: const StrategyConverter().fromJson(json['strategy']),
+      timeframe: const TimeframeConverter().fromJson(json['timeframe']),
+      session: const SessionConverter().fromJson(json['session']),
+      entryPrice: (json['entry_price'] as num?)?.toDouble(),
+      stopLoss: (json['stop_loss'] as num?)?.toDouble(),
+      takeProfit: (json['take_profit'] as num?)?.toDouble(),
+      lotSize: (json['lot_size'] as num?)?.toDouble(),
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+      reason: json['reason'] as String? ?? '',
       timeframeScores: (json['timeframe_scores'] as Map<String, dynamic>?)?.map(
             (k, e) => MapEntry(k, (e as num).toDouble()),
           ) ??
           const {},
-      regime: const RegimeConverter().fromJson(json['regime'] as String),
-      regimeConfidence: (json['regime_confidence'] as num).toDouble(),
-      sentimentScore: (json['sentiment_score'] as num).toDouble(),
-      riskScore: (json['risk_score'] as num).toDouble(),
+      regime: json['regime'] == null
+          ? Regime.unknown
+          : const RegimeConverter().fromJson(json['regime']),
+      regimeConfidence: (json['regime_confidence'] as num?)?.toDouble() ?? 0.0,
+      strategyConfidence:
+          (json['strategy_confidence'] as num?)?.toDouble() ?? 0.0,
+      h4Bias: json['h4_bias'] == null
+          ? Direction.neutral
+          : const DirectionConverter().fromJson(json['h4_bias']),
+      h1Regime: json['h1_regime'] == null
+          ? Regime.unknown
+          : const RegimeConverter().fromJson(json['h1_regime']),
+      sentimentScore: (json['sentiment_score'] as num?)?.toDouble() ?? 0.0,
+      riskScore: (json['risk_score'] as num?)?.toDouble() ?? 0.0,
       barsInRegime: (json['bars_in_regime'] as num?)?.toInt() ?? 0,
       durationWarning: json['duration_warning'] as bool? ?? false,
-      isValid: json['is_valid'] as bool,
+      isValid: json['is_valid'] as bool? ?? true,
       expiresAt: DateTime.parse(json['expires_at'] as String),
     );
 
@@ -54,6 +63,9 @@ Map<String, dynamic> _$$BackendSignalImplToJson(_$BackendSignalImpl instance) =>
       'timeframe_scores': instance.timeframeScores,
       'regime': const RegimeConverter().toJson(instance.regime),
       'regime_confidence': instance.regimeConfidence,
+      'strategy_confidence': instance.strategyConfidence,
+      'h4_bias': const DirectionConverter().toJson(instance.h4Bias),
+      'h1_regime': const RegimeConverter().toJson(instance.h1Regime),
       'sentiment_score': instance.sentimentScore,
       'risk_score': instance.riskScore,
       'bars_in_regime': instance.barsInRegime,

@@ -134,8 +134,8 @@ class _TradeRow extends StatelessWidget {
             _DetailItem(label: "Ticket ID", value: trade.brokerTicketId),
             _DetailItem(label: "Direction", value: trade.direction.name.toUpperCase(), color: trade.direction == Direction.long ? AppColors.buyGreen : AppColors.sellRed),
             _DetailItem(label: "Lots", value: trade.lotSize.toString()),
-            _DetailItem(label: "Stop Loss", value: trade.stopLoss.toStringAsFixed(5), color: AppColors.sellRed),
-            _DetailItem(label: "Take Profit", value: trade.takeProfit.toStringAsFixed(5), color: AppColors.profitGreen),
+            _DetailItem(label: "Stop Loss", value: (trade.stopLoss ?? 0.0).toStringAsFixed(5), color: AppColors.sellRed),
+            _DetailItem(label: "Take Profit", value: (trade.takeProfit ?? 0.0).toStringAsFixed(5), color: AppColors.profitGreen),
             _DetailItem(label: "Open Time", value: DateFormat('yyyy-MM-dd HH:mm').format(trade.openTime.toLocal())),
             const SizedBox(height: AppSpacing.lg),
             SizedBox(

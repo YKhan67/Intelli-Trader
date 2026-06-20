@@ -22,7 +22,7 @@ CalendarEvent _$CalendarEventFromJson(Map<String, dynamic> json) {
 mixin _$CalendarEvent {
   @JsonKey(name: 'event_id')
   String get eventId => throw _privateConstructorUsedError;
-  DateTime get timestamp => throw _privateConstructorUsedError;
+  DateTime? get timestamp => throw _privateConstructorUsedError;
   String get currency => throw _privateConstructorUsedError;
   @JsonKey(name: 'event_name')
   String get eventName => throw _privateConstructorUsedError;
@@ -54,7 +54,7 @@ abstract class $CalendarEventCopyWith<$Res> {
   @useResult
   $Res call(
       {@JsonKey(name: 'event_id') String eventId,
-      DateTime timestamp,
+      DateTime? timestamp,
       String currency,
       @JsonKey(name: 'event_name') String eventName,
       @ImpactLevelConverter() ImpactLevel impact,
@@ -83,7 +83,7 @@ class _$CalendarEventCopyWithImpl<$Res, $Val extends CalendarEvent>
   @override
   $Res call({
     Object? eventId = null,
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? currency = null,
     Object? eventName = null,
     Object? impact = null,
@@ -98,10 +98,10 @@ class _$CalendarEventCopyWithImpl<$Res, $Val extends CalendarEvent>
           ? _value.eventId
           : eventId // ignore: cast_nullable_to_non_nullable
               as String,
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       currency: null == currency
           ? _value.currency
           : currency // ignore: cast_nullable_to_non_nullable
@@ -148,7 +148,7 @@ abstract class _$$CalendarEventImplCopyWith<$Res>
   @useResult
   $Res call(
       {@JsonKey(name: 'event_id') String eventId,
-      DateTime timestamp,
+      DateTime? timestamp,
       String currency,
       @JsonKey(name: 'event_name') String eventName,
       @ImpactLevelConverter() ImpactLevel impact,
@@ -175,7 +175,7 @@ class __$$CalendarEventImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? eventId = null,
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? currency = null,
     Object? eventName = null,
     Object? impact = null,
@@ -190,10 +190,10 @@ class __$$CalendarEventImplCopyWithImpl<$Res>
           ? _value.eventId
           : eventId // ignore: cast_nullable_to_non_nullable
               as String,
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       currency: null == currency
           ? _value.currency
           : currency // ignore: cast_nullable_to_non_nullable
@@ -234,11 +234,11 @@ class __$$CalendarEventImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$CalendarEventImpl extends _CalendarEvent {
   const _$CalendarEventImpl(
-      {@JsonKey(name: 'event_id') required this.eventId,
-      required this.timestamp,
-      required this.currency,
-      @JsonKey(name: 'event_name') required this.eventName,
-      @ImpactLevelConverter() required this.impact,
+      {@JsonKey(name: 'event_id') this.eventId = '',
+      this.timestamp,
+      this.currency = 'Unknown',
+      @JsonKey(name: 'event_name') this.eventName = 'Economic Event',
+      @ImpactLevelConverter() this.impact = ImpactLevel.low,
       this.forecast,
       this.previous,
       this.actual,
@@ -255,13 +255,15 @@ class _$CalendarEventImpl extends _CalendarEvent {
   @JsonKey(name: 'event_id')
   final String eventId;
   @override
-  final DateTime timestamp;
+  final DateTime? timestamp;
   @override
+  @JsonKey()
   final String currency;
   @override
   @JsonKey(name: 'event_name')
   final String eventName;
   @override
+  @JsonKey()
   @ImpactLevelConverter()
   final ImpactLevel impact;
   @override
@@ -339,11 +341,11 @@ class _$CalendarEventImpl extends _CalendarEvent {
 
 abstract class _CalendarEvent extends CalendarEvent {
   const factory _CalendarEvent(
-      {@JsonKey(name: 'event_id') required final String eventId,
-      required final DateTime timestamp,
-      required final String currency,
-      @JsonKey(name: 'event_name') required final String eventName,
-      @ImpactLevelConverter() required final ImpactLevel impact,
+      {@JsonKey(name: 'event_id') final String eventId,
+      final DateTime? timestamp,
+      final String currency,
+      @JsonKey(name: 'event_name') final String eventName,
+      @ImpactLevelConverter() final ImpactLevel impact,
       final String? forecast,
       final String? previous,
       final String? actual,
@@ -360,7 +362,7 @@ abstract class _CalendarEvent extends CalendarEvent {
   @JsonKey(name: 'event_id')
   String get eventId;
   @override
-  DateTime get timestamp;
+  DateTime? get timestamp;
   @override
   String get currency;
   @override

@@ -73,6 +73,7 @@ class SignalAction(str, Enum):
 class TradeType(str, Enum):
     PAPER = "PAPER"
     LIVE = "LIVE"
+    SEEDED = "SEEDED"
 
 class ImpactLevel(str, Enum):
     HIGH = "HIGH"

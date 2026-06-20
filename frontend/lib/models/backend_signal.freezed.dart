@@ -35,13 +35,13 @@ mixin _$BackendSignal {
   @SessionConverter()
   Session get session => throw _privateConstructorUsedError;
   @JsonKey(name: 'entry_price')
-  double get entryPrice => throw _privateConstructorUsedError;
+  double? get entryPrice => throw _privateConstructorUsedError;
   @JsonKey(name: 'stop_loss')
-  double get stopLoss => throw _privateConstructorUsedError;
+  double? get stopLoss => throw _privateConstructorUsedError;
   @JsonKey(name: 'take_profit')
-  double get takeProfit => throw _privateConstructorUsedError;
+  double? get takeProfit => throw _privateConstructorUsedError;
   @JsonKey(name: 'lot_size')
-  double get lotSize => throw _privateConstructorUsedError;
+  double? get lotSize => throw _privateConstructorUsedError;
   double get confidence => throw _privateConstructorUsedError;
   String get reason => throw _privateConstructorUsedError;
   @JsonKey(name: 'timeframe_scores')
@@ -50,6 +50,14 @@ mixin _$BackendSignal {
   Regime get regime => throw _privateConstructorUsedError;
   @JsonKey(name: 'regime_confidence')
   double get regimeConfidence => throw _privateConstructorUsedError;
+  @JsonKey(name: 'strategy_confidence')
+  double get strategyConfidence => throw _privateConstructorUsedError;
+  @DirectionConverter()
+  @JsonKey(name: 'h4_bias')
+  Direction get h4Bias => throw _privateConstructorUsedError;
+  @RegimeConverter()
+  @JsonKey(name: 'h1_regime')
+  Regime get h1Regime => throw _privateConstructorUsedError;
   @JsonKey(name: 'sentiment_score')
   double get sentimentScore => throw _privateConstructorUsedError;
   @JsonKey(name: 'risk_score')
@@ -87,15 +95,18 @@ abstract class $BackendSignalCopyWith<$Res> {
       @StrategyConverter() Strategy strategy,
       @TimeframeConverter() Timeframe timeframe,
       @SessionConverter() Session session,
-      @JsonKey(name: 'entry_price') double entryPrice,
-      @JsonKey(name: 'stop_loss') double stopLoss,
-      @JsonKey(name: 'take_profit') double takeProfit,
-      @JsonKey(name: 'lot_size') double lotSize,
+      @JsonKey(name: 'entry_price') double? entryPrice,
+      @JsonKey(name: 'stop_loss') double? stopLoss,
+      @JsonKey(name: 'take_profit') double? takeProfit,
+      @JsonKey(name: 'lot_size') double? lotSize,
       double confidence,
       String reason,
       @JsonKey(name: 'timeframe_scores') Map<String, double> timeframeScores,
       @RegimeConverter() Regime regime,
       @JsonKey(name: 'regime_confidence') double regimeConfidence,
+      @JsonKey(name: 'strategy_confidence') double strategyConfidence,
+      @DirectionConverter() @JsonKey(name: 'h4_bias') Direction h4Bias,
+      @RegimeConverter() @JsonKey(name: 'h1_regime') Regime h1Regime,
       @JsonKey(name: 'sentiment_score') double sentimentScore,
       @JsonKey(name: 'risk_score') double riskScore,
       @JsonKey(name: 'bars_in_regime') int barsInRegime,
@@ -126,15 +137,18 @@ class _$BackendSignalCopyWithImpl<$Res, $Val extends BackendSignal>
     Object? strategy = null,
     Object? timeframe = null,
     Object? session = null,
-    Object? entryPrice = null,
-    Object? stopLoss = null,
-    Object? takeProfit = null,
-    Object? lotSize = null,
+    Object? entryPrice = freezed,
+    Object? stopLoss = freezed,
+    Object? takeProfit = freezed,
+    Object? lotSize = freezed,
     Object? confidence = null,
     Object? reason = null,
     Object? timeframeScores = null,
     Object? regime = null,
     Object? regimeConfidence = null,
+    Object? strategyConfidence = null,
+    Object? h4Bias = null,
+    Object? h1Regime = null,
     Object? sentimentScore = null,
     Object? riskScore = null,
     Object? barsInRegime = null,
@@ -171,22 +185,22 @@ class _$BackendSignalCopyWithImpl<$Res, $Val extends BackendSignal>
           ? _value.session
           : session // ignore: cast_nullable_to_non_nullable
               as Session,
-      entryPrice: null == entryPrice
+      entryPrice: freezed == entryPrice
           ? _value.entryPrice
           : entryPrice // ignore: cast_nullable_to_non_nullable
-              as double,
-      stopLoss: null == stopLoss
+              as double?,
+      stopLoss: freezed == stopLoss
           ? _value.stopLoss
           : stopLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      takeProfit: null == takeProfit
+              as double?,
+      takeProfit: freezed == takeProfit
           ? _value.takeProfit
           : takeProfit // ignore: cast_nullable_to_non_nullable
-              as double,
-      lotSize: null == lotSize
+              as double?,
+      lotSize: freezed == lotSize
           ? _value.lotSize
           : lotSize // ignore: cast_nullable_to_non_nullable
-              as double,
+              as double?,
       confidence: null == confidence
           ? _value.confidence
           : confidence // ignore: cast_nullable_to_non_nullable
@@ -207,6 +221,18 @@ class _$BackendSignalCopyWithImpl<$Res, $Val extends BackendSignal>
           ? _value.regimeConfidence
           : regimeConfidence // ignore: cast_nullable_to_non_nullable
               as double,
+      strategyConfidence: null == strategyConfidence
+          ? _value.strategyConfidence
+          : strategyConfidence // ignore: cast_nullable_to_non_nullable
+              as double,
+      h4Bias: null == h4Bias
+          ? _value.h4Bias
+          : h4Bias // ignore: cast_nullable_to_non_nullable
+              as Direction,
+      h1Regime: null == h1Regime
+          ? _value.h1Regime
+          : h1Regime // ignore: cast_nullable_to_non_nullable
+              as Regime,
       sentimentScore: null == sentimentScore
           ? _value.sentimentScore
           : sentimentScore // ignore: cast_nullable_to_non_nullable
@@ -251,15 +277,18 @@ abstract class _$$BackendSignalImplCopyWith<$Res>
       @StrategyConverter() Strategy strategy,
       @TimeframeConverter() Timeframe timeframe,
       @SessionConverter() Session session,
-      @JsonKey(name: 'entry_price') double entryPrice,
-      @JsonKey(name: 'stop_loss') double stopLoss,
-      @JsonKey(name: 'take_profit') double takeProfit,
-      @JsonKey(name: 'lot_size') double lotSize,
+      @JsonKey(name: 'entry_price') double? entryPrice,
+      @JsonKey(name: 'stop_loss') double? stopLoss,
+      @JsonKey(name: 'take_profit') double? takeProfit,
+      @JsonKey(name: 'lot_size') double? lotSize,
       double confidence,
       String reason,
       @JsonKey(name: 'timeframe_scores') Map<String, double> timeframeScores,
       @RegimeConverter() Regime regime,
       @JsonKey(name: 'regime_confidence') double regimeConfidence,
+      @JsonKey(name: 'strategy_confidence') double strategyConfidence,
+      @DirectionConverter() @JsonKey(name: 'h4_bias') Direction h4Bias,
+      @RegimeConverter() @JsonKey(name: 'h1_regime') Regime h1Regime,
       @JsonKey(name: 'sentiment_score') double sentimentScore,
       @JsonKey(name: 'risk_score') double riskScore,
       @JsonKey(name: 'bars_in_regime') int barsInRegime,
@@ -288,15 +317,18 @@ class __$$BackendSignalImplCopyWithImpl<$Res>
     Object? strategy = null,
     Object? timeframe = null,
     Object? session = null,
-    Object? entryPrice = null,
-    Object? stopLoss = null,
-    Object? takeProfit = null,
-    Object? lotSize = null,
+    Object? entryPrice = freezed,
+    Object? stopLoss = freezed,
+    Object? takeProfit = freezed,
+    Object? lotSize = freezed,
     Object? confidence = null,
     Object? reason = null,
     Object? timeframeScores = null,
     Object? regime = null,
     Object? regimeConfidence = null,
+    Object? strategyConfidence = null,
+    Object? h4Bias = null,
+    Object? h1Regime = null,
     Object? sentimentScore = null,
     Object? riskScore = null,
     Object? barsInRegime = null,
@@ -333,22 +365,22 @@ class __$$BackendSignalImplCopyWithImpl<$Res>
           ? _value.session
           : session // ignore: cast_nullable_to_non_nullable
               as Session,
-      entryPrice: null == entryPrice
+      entryPrice: freezed == entryPrice
           ? _value.entryPrice
           : entryPrice // ignore: cast_nullable_to_non_nullable
-              as double,
-      stopLoss: null == stopLoss
+              as double?,
+      stopLoss: freezed == stopLoss
           ? _value.stopLoss
           : stopLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      takeProfit: null == takeProfit
+              as double?,
+      takeProfit: freezed == takeProfit
           ? _value.takeProfit
           : takeProfit // ignore: cast_nullable_to_non_nullable
-              as double,
-      lotSize: null == lotSize
+              as double?,
+      lotSize: freezed == lotSize
           ? _value.lotSize
           : lotSize // ignore: cast_nullable_to_non_nullable
-              as double,
+              as double?,
       confidence: null == confidence
           ? _value.confidence
           : confidence // ignore: cast_nullable_to_non_nullable
@@ -369,6 +401,18 @@ class __$$BackendSignalImplCopyWithImpl<$Res>
           ? _value.regimeConfidence
           : regimeConfidence // ignore: cast_nullable_to_non_nullable
               as double,
+      strategyConfidence: null == strategyConfidence
+          ? _value.strategyConfidence
+          : strategyConfidence // ignore: cast_nullable_to_non_nullable
+              as double,
+      h4Bias: null == h4Bias
+          ? _value.h4Bias
+          : h4Bias // ignore: cast_nullable_to_non_nullable
+              as Direction,
+      h1Regime: null == h1Regime
+          ? _value.h1Regime
+          : h1Regime // ignore: cast_nullable_to_non_nullable
+              as Regime,
       sentimentScore: null == sentimentScore
           ? _value.sentimentScore
           : sentimentScore // ignore: cast_nullable_to_non_nullable
@@ -408,21 +452,28 @@ class _$BackendSignalImpl extends _BackendSignal {
       @StrategyConverter() required this.strategy,
       @TimeframeConverter() required this.timeframe,
       @SessionConverter() required this.session,
-      @JsonKey(name: 'entry_price') required this.entryPrice,
-      @JsonKey(name: 'stop_loss') required this.stopLoss,
-      @JsonKey(name: 'take_profit') required this.takeProfit,
-      @JsonKey(name: 'lot_size') required this.lotSize,
-      required this.confidence,
-      required this.reason,
+      @JsonKey(name: 'entry_price') this.entryPrice,
+      @JsonKey(name: 'stop_loss') this.stopLoss,
+      @JsonKey(name: 'take_profit') this.takeProfit,
+      @JsonKey(name: 'lot_size') this.lotSize,
+      this.confidence = 0.0,
+      this.reason = '',
       @JsonKey(name: 'timeframe_scores')
       final Map<String, double> timeframeScores = const {},
-      @RegimeConverter() required this.regime,
-      @JsonKey(name: 'regime_confidence') required this.regimeConfidence,
-      @JsonKey(name: 'sentiment_score') required this.sentimentScore,
-      @JsonKey(name: 'risk_score') required this.riskScore,
+      @RegimeConverter() this.regime = Regime.unknown,
+      @JsonKey(name: 'regime_confidence') this.regimeConfidence = 0.0,
+      @JsonKey(name: 'strategy_confidence') this.strategyConfidence = 0.0,
+      @DirectionConverter()
+      @JsonKey(name: 'h4_bias')
+      this.h4Bias = Direction.neutral,
+      @RegimeConverter()
+      @JsonKey(name: 'h1_regime')
+      this.h1Regime = Regime.unknown,
+      @JsonKey(name: 'sentiment_score') this.sentimentScore = 0.0,
+      @JsonKey(name: 'risk_score') this.riskScore = 0.0,
       @JsonKey(name: 'bars_in_regime') this.barsInRegime = 0,
       @JsonKey(name: 'duration_warning') this.durationWarning = false,
-      @JsonKey(name: 'is_valid') required this.isValid,
+      @JsonKey(name: 'is_valid') this.isValid = true,
       @JsonKey(name: 'expires_at') required this.expiresAt})
       : _timeframeScores = timeframeScores,
         super._();
@@ -453,19 +504,21 @@ class _$BackendSignalImpl extends _BackendSignal {
   final Session session;
   @override
   @JsonKey(name: 'entry_price')
-  final double entryPrice;
+  final double? entryPrice;
   @override
   @JsonKey(name: 'stop_loss')
-  final double stopLoss;
+  final double? stopLoss;
   @override
   @JsonKey(name: 'take_profit')
-  final double takeProfit;
+  final double? takeProfit;
   @override
   @JsonKey(name: 'lot_size')
-  final double lotSize;
+  final double? lotSize;
   @override
+  @JsonKey()
   final double confidence;
   @override
+  @JsonKey()
   final String reason;
   final Map<String, double> _timeframeScores;
   @override
@@ -477,11 +530,23 @@ class _$BackendSignalImpl extends _BackendSignal {
   }
 
   @override
+  @JsonKey()
   @RegimeConverter()
   final Regime regime;
   @override
   @JsonKey(name: 'regime_confidence')
   final double regimeConfidence;
+  @override
+  @JsonKey(name: 'strategy_confidence')
+  final double strategyConfidence;
+  @override
+  @DirectionConverter()
+  @JsonKey(name: 'h4_bias')
+  final Direction h4Bias;
+  @override
+  @RegimeConverter()
+  @JsonKey(name: 'h1_regime')
+  final Regime h1Regime;
   @override
   @JsonKey(name: 'sentiment_score')
   final double sentimentScore;
@@ -503,7 +568,7 @@ class _$BackendSignalImpl extends _BackendSignal {
 
   @override
   String toString() {
-    return 'BackendSignal(signalId: $signalId, generatedAt: $generatedAt, pair: $pair, action: $action, strategy: $strategy, timeframe: $timeframe, session: $session, entryPrice: $entryPrice, stopLoss: $stopLoss, takeProfit: $takeProfit, lotSize: $lotSize, confidence: $confidence, reason: $reason, timeframeScores: $timeframeScores, regime: $regime, regimeConfidence: $regimeConfidence, sentimentScore: $sentimentScore, riskScore: $riskScore, barsInRegime: $barsInRegime, durationWarning: $durationWarning, isValid: $isValid, expiresAt: $expiresAt)';
+    return 'BackendSignal(signalId: $signalId, generatedAt: $generatedAt, pair: $pair, action: $action, strategy: $strategy, timeframe: $timeframe, session: $session, entryPrice: $entryPrice, stopLoss: $stopLoss, takeProfit: $takeProfit, lotSize: $lotSize, confidence: $confidence, reason: $reason, timeframeScores: $timeframeScores, regime: $regime, regimeConfidence: $regimeConfidence, strategyConfidence: $strategyConfidence, h4Bias: $h4Bias, h1Regime: $h1Regime, sentimentScore: $sentimentScore, riskScore: $riskScore, barsInRegime: $barsInRegime, durationWarning: $durationWarning, isValid: $isValid, expiresAt: $expiresAt)';
   }
 
   @override
@@ -537,6 +602,11 @@ class _$BackendSignalImpl extends _BackendSignal {
             (identical(other.regime, regime) || other.regime == regime) &&
             (identical(other.regimeConfidence, regimeConfidence) ||
                 other.regimeConfidence == regimeConfidence) &&
+            (identical(other.strategyConfidence, strategyConfidence) ||
+                other.strategyConfidence == strategyConfidence) &&
+            (identical(other.h4Bias, h4Bias) || other.h4Bias == h4Bias) &&
+            (identical(other.h1Regime, h1Regime) ||
+                other.h1Regime == h1Regime) &&
             (identical(other.sentimentScore, sentimentScore) ||
                 other.sentimentScore == sentimentScore) &&
             (identical(other.riskScore, riskScore) ||
@@ -570,6 +640,9 @@ class _$BackendSignalImpl extends _BackendSignal {
         const DeepCollectionEquality().hash(_timeframeScores),
         regime,
         regimeConfidence,
+        strategyConfidence,
+        h4Bias,
+        h1Regime,
         sentimentScore,
         riskScore,
         barsInRegime,
@@ -603,22 +676,24 @@ abstract class _BackendSignal extends BackendSignal {
       @StrategyConverter() required final Strategy strategy,
       @TimeframeConverter() required final Timeframe timeframe,
       @SessionConverter() required final Session session,
-      @JsonKey(name: 'entry_price') required final double entryPrice,
-      @JsonKey(name: 'stop_loss') required final double stopLoss,
-      @JsonKey(name: 'take_profit') required final double takeProfit,
-      @JsonKey(name: 'lot_size') required final double lotSize,
-      required final double confidence,
-      required final String reason,
+      @JsonKey(name: 'entry_price') final double? entryPrice,
+      @JsonKey(name: 'stop_loss') final double? stopLoss,
+      @JsonKey(name: 'take_profit') final double? takeProfit,
+      @JsonKey(name: 'lot_size') final double? lotSize,
+      final double confidence,
+      final String reason,
       @JsonKey(name: 'timeframe_scores')
       final Map<String, double> timeframeScores,
-      @RegimeConverter() required final Regime regime,
-      @JsonKey(name: 'regime_confidence')
-      required final double regimeConfidence,
-      @JsonKey(name: 'sentiment_score') required final double sentimentScore,
-      @JsonKey(name: 'risk_score') required final double riskScore,
+      @RegimeConverter() final Regime regime,
+      @JsonKey(name: 'regime_confidence') final double regimeConfidence,
+      @JsonKey(name: 'strategy_confidence') final double strategyConfidence,
+      @DirectionConverter() @JsonKey(name: 'h4_bias') final Direction h4Bias,
+      @RegimeConverter() @JsonKey(name: 'h1_regime') final Regime h1Regime,
+      @JsonKey(name: 'sentiment_score') final double sentimentScore,
+      @JsonKey(name: 'risk_score') final double riskScore,
       @JsonKey(name: 'bars_in_regime') final int barsInRegime,
       @JsonKey(name: 'duration_warning') final bool durationWarning,
-      @JsonKey(name: 'is_valid') required final bool isValid,
+      @JsonKey(name: 'is_valid') final bool isValid,
       @JsonKey(name: 'expires_at')
       required final DateTime expiresAt}) = _$BackendSignalImpl;
   const _BackendSignal._() : super._();
@@ -649,16 +724,16 @@ abstract class _BackendSignal extends BackendSignal {
   Session get session;
   @override
   @JsonKey(name: 'entry_price')
-  double get entryPrice;
+  double? get entryPrice;
   @override
   @JsonKey(name: 'stop_loss')
-  double get stopLoss;
+  double? get stopLoss;
   @override
   @JsonKey(name: 'take_profit')
-  double get takeProfit;
+  double? get takeProfit;
   @override
   @JsonKey(name: 'lot_size')
-  double get lotSize;
+  double? get lotSize;
   @override
   double get confidence;
   @override
@@ -672,6 +747,17 @@ abstract class _BackendSignal extends BackendSignal {
   @override
   @JsonKey(name: 'regime_confidence')
   double get regimeConfidence;
+  @override
+  @JsonKey(name: 'strategy_confidence')
+  double get strategyConfidence;
+  @override
+  @DirectionConverter()
+  @JsonKey(name: 'h4_bias')
+  Direction get h4Bias;
+  @override
+  @RegimeConverter()
+  @JsonKey(name: 'h1_regime')
+  Regime get h1Regime;
   @override
   @JsonKey(name: 'sentiment_score')
   double get sentimentScore;

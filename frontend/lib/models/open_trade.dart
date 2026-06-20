@@ -14,8 +14,8 @@ class OpenTrade with _$OpenTrade {
     @JsonKey(name: 'entry_price') required double entryPrice,
     @JsonKey(name: 'current_price') required double currentPrice,
     @JsonKey(name: 'lot_size') required double lotSize,
-    @JsonKey(name: 'stop_loss') required double stopLoss,
-    @JsonKey(name: 'take_profit') required double takeProfit,
+    @JsonKey(name: 'stop_loss') double? stopLoss,
+    @JsonKey(name: 'take_profit') double? takeProfit,
     @JsonKey(name: 'open_time') required DateTime openTime,
   }) = _OpenTrade;
 
@@ -24,16 +24,15 @@ class OpenTrade with _$OpenTrade {
   factory OpenTrade.fromJson(Map<String, dynamic> json) => _$OpenTradeFromJson(json);
 
   double get currentPips {
-    // This is a simplified pip calculation, in reality would use pipSize from CurrencyPair
     final diff = direction == Direction.long ? (currentPrice - entryPrice) : (entryPrice - currentPrice);
-    return diff * 10000; // EURUSD scale
+    // Rough pip calculation if pair is unknown, otherwise could use specific pipSize
+    return diff * 10000; 
   }
 
   double get currentPnl {
-    // lotSize * pips * 10 (standard lot value)
     return lotSize * currentPips * 10;
   }
 
-  double get distanceToSL => (currentPrice - stopLoss).abs();
-  double get distanceToTP => (currentPrice - takeProfit).abs();
+  double get distanceToSL => (currentPrice - (stopLoss ?? 0)).abs();
+  double get distanceToTP => (currentPrice - (takeProfit ?? 0)).abs();
 }

@@ -20,7 +20,7 @@ SentimentResult _$SentimentResultFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$SentimentResult {
-  DateTime get timestamp => throw _privateConstructorUsedError;
+  DateTime? get timestamp => throw _privateConstructorUsedError;
   @CurrencyPairConverter()
   CurrencyPair get pair => throw _privateConstructorUsedError;
   @JsonKey(name: 'currency_scores')
@@ -58,7 +58,7 @@ abstract class $SentimentResultCopyWith<$Res> {
       _$SentimentResultCopyWithImpl<$Res, SentimentResult>;
   @useResult
   $Res call(
-      {DateTime timestamp,
+      {DateTime? timestamp,
       @CurrencyPairConverter() CurrencyPair pair,
       @JsonKey(name: 'currency_scores') Map<String, double> currencyScores,
       @JsonKey(name: 'pair_score') double pairScore,
@@ -85,7 +85,7 @@ class _$SentimentResultCopyWithImpl<$Res, $Val extends SentimentResult>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? pair = null,
     Object? currencyScores = null,
     Object? pairScore = null,
@@ -97,10 +97,10 @@ class _$SentimentResultCopyWithImpl<$Res, $Val extends SentimentResult>
     Object? sentimentTrend = null,
   }) {
     return _then(_value.copyWith(
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       pair: null == pair
           ? _value.pair
           : pair // ignore: cast_nullable_to_non_nullable
@@ -150,7 +150,7 @@ abstract class _$$SentimentResultImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {DateTime timestamp,
+      {DateTime? timestamp,
       @CurrencyPairConverter() CurrencyPair pair,
       @JsonKey(name: 'currency_scores') Map<String, double> currencyScores,
       @JsonKey(name: 'pair_score') double pairScore,
@@ -175,7 +175,7 @@ class __$$SentimentResultImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? pair = null,
     Object? currencyScores = null,
     Object? pairScore = null,
@@ -187,10 +187,10 @@ class __$$SentimentResultImplCopyWithImpl<$Res>
     Object? sentimentTrend = null,
   }) {
     return _then(_$SentimentResultImpl(
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       pair: null == pair
           ? _value.pair
           : pair // ignore: cast_nullable_to_non_nullable
@@ -235,17 +235,20 @@ class __$$SentimentResultImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$SentimentResultImpl implements _SentimentResult {
   const _$SentimentResultImpl(
-      {required this.timestamp,
-      @CurrencyPairConverter() required this.pair,
+      {this.timestamp,
+      @CurrencyPairConverter() this.pair = CurrencyPair.unknown,
       @JsonKey(name: 'currency_scores')
-      required final Map<String, double> currencyScores,
-      @JsonKey(name: 'pair_score') required this.pairScore,
-      @JsonKey(name: 'pre_news_block') required this.preNewsBlock,
-      @JsonKey(name: 'hard_block') required this.hardBlock,
-      @JsonKey(name: 'post_news_window') required this.postNewsWindow,
-      @JsonKey(name: 'cot_bias') @DirectionConverter() required this.cotBias,
-      @JsonKey(name: 'top_headlines') required final List<String> topHeadlines,
-      @JsonKey(name: 'sentiment_trend') required this.sentimentTrend})
+      final Map<String, double> currencyScores = const {},
+      @JsonKey(name: 'pair_score') this.pairScore = 0.0,
+      @JsonKey(name: 'pre_news_block') this.preNewsBlock = false,
+      @JsonKey(name: 'hard_block') this.hardBlock = false,
+      @JsonKey(name: 'post_news_window') this.postNewsWindow = false,
+      @JsonKey(name: 'cot_bias')
+      @DirectionConverter()
+      this.cotBias = Direction.neutral,
+      @JsonKey(name: 'top_headlines')
+      final List<String> topHeadlines = const [],
+      @JsonKey(name: 'sentiment_trend') this.sentimentTrend = 'stable'})
       : _currencyScores = currencyScores,
         _topHeadlines = topHeadlines;
 
@@ -253,8 +256,9 @@ class _$SentimentResultImpl implements _SentimentResult {
       _$$SentimentResultImplFromJson(json);
 
   @override
-  final DateTime timestamp;
+  final DateTime? timestamp;
   @override
+  @JsonKey()
   @CurrencyPairConverter()
   final CurrencyPair pair;
   final Map<String, double> _currencyScores;
@@ -359,26 +363,24 @@ class _$SentimentResultImpl implements _SentimentResult {
 
 abstract class _SentimentResult implements SentimentResult {
   const factory _SentimentResult(
-      {required final DateTime timestamp,
-      @CurrencyPairConverter() required final CurrencyPair pair,
+      {final DateTime? timestamp,
+      @CurrencyPairConverter() final CurrencyPair pair,
       @JsonKey(name: 'currency_scores')
-      required final Map<String, double> currencyScores,
-      @JsonKey(name: 'pair_score') required final double pairScore,
-      @JsonKey(name: 'pre_news_block') required final bool preNewsBlock,
-      @JsonKey(name: 'hard_block') required final bool hardBlock,
-      @JsonKey(name: 'post_news_window') required final bool postNewsWindow,
-      @JsonKey(name: 'cot_bias')
-      @DirectionConverter()
-      required final Direction cotBias,
-      @JsonKey(name: 'top_headlines') required final List<String> topHeadlines,
+      final Map<String, double> currencyScores,
+      @JsonKey(name: 'pair_score') final double pairScore,
+      @JsonKey(name: 'pre_news_block') final bool preNewsBlock,
+      @JsonKey(name: 'hard_block') final bool hardBlock,
+      @JsonKey(name: 'post_news_window') final bool postNewsWindow,
+      @JsonKey(name: 'cot_bias') @DirectionConverter() final Direction cotBias,
+      @JsonKey(name: 'top_headlines') final List<String> topHeadlines,
       @JsonKey(name: 'sentiment_trend')
-      required final String sentimentTrend}) = _$SentimentResultImpl;
+      final String sentimentTrend}) = _$SentimentResultImpl;
 
   factory _SentimentResult.fromJson(Map<String, dynamic> json) =
       _$SentimentResultImpl.fromJson;
 
   @override
-  DateTime get timestamp;
+  DateTime? get timestamp;
   @override
   @CurrencyPairConverter()
   CurrencyPair get pair;

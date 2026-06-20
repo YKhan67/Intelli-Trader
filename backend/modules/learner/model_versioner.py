@@ -8,6 +8,9 @@ from backend.modules.models import ModelStatus
 logger = logging.getLogger("ModelVersioner")
 
 class ModelVersioner:
+    def __init__(self, config=None):
+        self.config = config or {}
+
     @staticmethod
     async def get_latest_live_model(module_name: str):
         """
@@ -19,7 +22,7 @@ class ModelVersioner:
                     ModelVersionDB.module == module_name,
                     ModelVersionDB.status == ModelStatus.LIVE
                 )
-            ).order_by(ModelVersionDB.created_at.desc()).limit(1)
+            ).order_by(ModelVersionDB.trained_at.desc()).limit(1)
             
             res = await session.execute(stmt)
             version = res.scalar_one_or_none()

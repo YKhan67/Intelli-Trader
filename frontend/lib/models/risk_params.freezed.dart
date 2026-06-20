@@ -291,20 +291,20 @@ class __$$RiskParamsImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$RiskParamsImpl implements _RiskParams {
   const _$RiskParamsImpl(
-      {@JsonKey(name: 'lot_size') required this.lotSize,
-      @JsonKey(name: 'stop_loss_pips') required this.stopLossPips,
-      @JsonKey(name: 'take_profit_pips') required this.takeProfitPips,
-      @JsonKey(name: 'stop_loss_price') required this.stopLossPrice,
-      @JsonKey(name: 'take_profit_price') required this.takeProfitPrice,
-      @JsonKey(name: 'partial_close_price') required this.partialClosePrice,
-      @JsonKey(name: 'breakeven_price') required this.breakevenPrice,
-      @JsonKey(name: 'risk_percent') required this.riskPercent,
-      @JsonKey(name: 'rr_ratio') required this.rrRatio,
-      @JsonKey(name: 'daily_halt') required this.dailyHalt,
-      @JsonKey(name: 'hard_daily_halt') required this.hardDailyHalt,
-      @JsonKey(name: 'weekly_review') required this.weeklyReview,
-      @JsonKey(name: 'correlated_exposure') required this.correlatedExposure,
-      @JsonKey(name: 'risk_score') required this.riskScore});
+      {@JsonKey(name: 'lot_size') this.lotSize = 0.0,
+      @JsonKey(name: 'stop_loss_pips') this.stopLossPips = 0.0,
+      @JsonKey(name: 'take_profit_pips') this.takeProfitPips = 0.0,
+      @JsonKey(name: 'stop_loss_price') this.stopLossPrice = 0.0,
+      @JsonKey(name: 'take_profit_price') this.takeProfitPrice = 0.0,
+      @JsonKey(name: 'partial_close_price') this.partialClosePrice,
+      @JsonKey(name: 'breakeven_price') this.breakevenPrice,
+      @JsonKey(name: 'risk_percent') this.riskPercent = 0.0,
+      @JsonKey(name: 'rr_ratio') this.rrRatio = 0.0,
+      @JsonKey(name: 'daily_halt') this.dailyHalt = false,
+      @JsonKey(name: 'hard_daily_halt') this.hardDailyHalt = false,
+      @JsonKey(name: 'weekly_review') this.weeklyReview = false,
+      @JsonKey(name: 'correlated_exposure') this.correlatedExposure = false,
+      @JsonKey(name: 'risk_score') this.riskScore = 0.0});
 
   factory _$RiskParamsImpl.fromJson(Map<String, dynamic> json) =>
       _$$RiskParamsImplFromJson(json);
@@ -427,23 +427,20 @@ class _$RiskParamsImpl implements _RiskParams {
 
 abstract class _RiskParams implements RiskParams {
   const factory _RiskParams(
-      {@JsonKey(name: 'lot_size') required final double lotSize,
-      @JsonKey(name: 'stop_loss_pips') required final double stopLossPips,
-      @JsonKey(name: 'take_profit_pips') required final double takeProfitPips,
-      @JsonKey(name: 'stop_loss_price') required final double stopLossPrice,
-      @JsonKey(name: 'take_profit_price') required final double takeProfitPrice,
-      @JsonKey(name: 'partial_close_price')
-      required final double? partialClosePrice,
-      @JsonKey(name: 'breakeven_price') required final double? breakevenPrice,
-      @JsonKey(name: 'risk_percent') required final double riskPercent,
-      @JsonKey(name: 'rr_ratio') required final double rrRatio,
-      @JsonKey(name: 'daily_halt') required final bool dailyHalt,
-      @JsonKey(name: 'hard_daily_halt') required final bool hardDailyHalt,
-      @JsonKey(name: 'weekly_review') required final bool weeklyReview,
-      @JsonKey(name: 'correlated_exposure')
-      required final bool correlatedExposure,
-      @JsonKey(name: 'risk_score')
-      required final double riskScore}) = _$RiskParamsImpl;
+      {@JsonKey(name: 'lot_size') final double lotSize,
+      @JsonKey(name: 'stop_loss_pips') final double stopLossPips,
+      @JsonKey(name: 'take_profit_pips') final double takeProfitPips,
+      @JsonKey(name: 'stop_loss_price') final double stopLossPrice,
+      @JsonKey(name: 'take_profit_price') final double takeProfitPrice,
+      @JsonKey(name: 'partial_close_price') final double? partialClosePrice,
+      @JsonKey(name: 'breakeven_price') final double? breakevenPrice,
+      @JsonKey(name: 'risk_percent') final double riskPercent,
+      @JsonKey(name: 'rr_ratio') final double rrRatio,
+      @JsonKey(name: 'daily_halt') final bool dailyHalt,
+      @JsonKey(name: 'hard_daily_halt') final bool hardDailyHalt,
+      @JsonKey(name: 'weekly_review') final bool weeklyReview,
+      @JsonKey(name: 'correlated_exposure') final bool correlatedExposure,
+      @JsonKey(name: 'risk_score') final double riskScore}) = _$RiskParamsImpl;
 
   factory _RiskParams.fromJson(Map<String, dynamic> json) =
       _$RiskParamsImpl.fromJson;

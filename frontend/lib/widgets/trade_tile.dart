@@ -29,7 +29,7 @@ class TradeTile extends StatelessWidget {
           ),
         ],
       ),
-      subtitle: Text("${trade.lotSize} Lots @ ${trade.entryPrice.toStringAsFixed(5)}"),
+      subtitle: Text("${trade.lotSize ?? 0.0} Lots @ ${(trade.entryPrice ?? 0.0).toStringAsFixed(5)}"),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,

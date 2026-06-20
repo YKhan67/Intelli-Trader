@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../state/providers.dart';
-import '../theme/colors.dart';
-import '../theme/spacing.dart';
-import '../models/models.dart';
+import 'package:forex_ai_frontend/state/providers.dart';
+import 'package:forex_ai_frontend/theme/colors.dart';
+import 'package:forex_ai_frontend/theme/spacing.dart';
+import 'package:forex_ai_frontend/models/models.dart';
+import 'package:forex_ai_frontend/utils/logger.dart';
 
 class EngineControlPanel extends ConsumerWidget {
   const EngineControlPanel({super.key});
@@ -93,8 +94,18 @@ class EngineControlPanel extends ConsumerWidget {
                   ButtonSegment(value: TradingMode.aggressive, label: Text("Aggr", style: TextStyle(fontSize: 12))),
                 ],
                 selected: {mode},
-                onSelectionChanged: (val) {
-                  ref.read(tradingModeStateProvider.notifier).setMode(val.first);
+                onSelectionChanged: (val) async {
+                  final newMode = val.first;
+                  await ref.read(tradingModeStateProvider.notifier).setMode(newMode);
+                  
+                  // Sync to backend
+                  try {
+                    final pairs = ref.read(activePairsStateProvider);
+                    final risk = ref.read(riskSettingsStateProvider);
+                    await ref.read(backendServiceProvider).postSettings(newMode, pairs, risk);
+                  } catch (e) {
+                    logger.e("Failed to sync mode to backend: $e");
+                  }
                 },
                 showSelectedIcon: false,
                 style: SegmentedButton.styleFrom(

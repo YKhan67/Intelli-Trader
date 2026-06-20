@@ -8,20 +8,20 @@ part of 'risk_params.dart';
 
 _$RiskParamsImpl _$$RiskParamsImplFromJson(Map<String, dynamic> json) =>
     _$RiskParamsImpl(
-      lotSize: (json['lot_size'] as num).toDouble(),
-      stopLossPips: (json['stop_loss_pips'] as num).toDouble(),
-      takeProfitPips: (json['take_profit_pips'] as num).toDouble(),
-      stopLossPrice: (json['stop_loss_price'] as num).toDouble(),
-      takeProfitPrice: (json['take_profit_price'] as num).toDouble(),
+      lotSize: (json['lot_size'] as num?)?.toDouble() ?? 0.0,
+      stopLossPips: (json['stop_loss_pips'] as num?)?.toDouble() ?? 0.0,
+      takeProfitPips: (json['take_profit_pips'] as num?)?.toDouble() ?? 0.0,
+      stopLossPrice: (json['stop_loss_price'] as num?)?.toDouble() ?? 0.0,
+      takeProfitPrice: (json['take_profit_price'] as num?)?.toDouble() ?? 0.0,
       partialClosePrice: (json['partial_close_price'] as num?)?.toDouble(),
       breakevenPrice: (json['breakeven_price'] as num?)?.toDouble(),
-      riskPercent: (json['risk_percent'] as num).toDouble(),
-      rrRatio: (json['rr_ratio'] as num).toDouble(),
-      dailyHalt: json['daily_halt'] as bool,
-      hardDailyHalt: json['hard_daily_halt'] as bool,
-      weeklyReview: json['weekly_review'] as bool,
-      correlatedExposure: json['correlated_exposure'] as bool,
-      riskScore: (json['risk_score'] as num).toDouble(),
+      riskPercent: (json['risk_percent'] as num?)?.toDouble() ?? 0.0,
+      rrRatio: (json['rr_ratio'] as num?)?.toDouble() ?? 0.0,
+      dailyHalt: json['daily_halt'] as bool? ?? false,
+      hardDailyHalt: json['hard_daily_halt'] as bool? ?? false,
+      weeklyReview: json['weekly_review'] as bool? ?? false,
+      correlatedExposure: json['correlated_exposure'] as bool? ?? false,
+      riskScore: (json['risk_score'] as num?)?.toDouble() ?? 0.0,
     );
 
 Map<String, dynamic> _$$RiskParamsImplToJson(_$RiskParamsImpl instance) =>

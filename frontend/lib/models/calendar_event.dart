@@ -8,11 +8,11 @@ part 'calendar_event.g.dart';
 @freezed
 class CalendarEvent with _$CalendarEvent {
   const factory CalendarEvent({
-    @JsonKey(name: 'event_id') required String eventId,
-    required DateTime timestamp,
-    required String currency,
-    @JsonKey(name: 'event_name') required String eventName,
-    @ImpactLevelConverter() required ImpactLevel impact,
+    @JsonKey(name: 'event_id') @Default('') String eventId,
+    DateTime? timestamp,
+    @Default('Unknown') String currency,
+    @JsonKey(name: 'event_name') @Default('Economic Event') String eventName,
+    @ImpactLevelConverter() @Default(ImpactLevel.low) ImpactLevel impact,
     String? forecast,
     String? previous,
     String? actual,
@@ -24,6 +24,6 @@ class CalendarEvent with _$CalendarEvent {
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) => _$CalendarEventFromJson(json);
 
-  int get minutesAway => timestamp.difference(DateTime.now()).inMinutes;
-  bool get isPast => timestamp.isBefore(DateTime.now());
+  int get minutesAway => timestamp?.difference(DateTime.now()).inMinutes ?? 0;
+  bool get isPast => timestamp?.isBefore(DateTime.now()) ?? true;
 }

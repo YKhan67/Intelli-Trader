@@ -168,7 +168,7 @@ enum SignalAction {
   }
 }
 
-enum TradeType { paper, live }
+enum TradeType { paper, live, seeded }
 
 enum OrderStatus { pending, open, partial, closed, cancelled }
 

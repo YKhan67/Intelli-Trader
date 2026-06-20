@@ -23,16 +23,22 @@ class PriceDownloader:
         self.zip_base_path = config.get("historical_zip_path", "D:/prj/ForexDataDL/downloads")
         self.temp_dir = "backend/data/temp"
         os.makedirs(self.temp_dir, exist_ok=True)
-        
-        # High-speed sync engine
         sync_url = DATABASE_URL.replace("postgresql+asyncpg", "postgresql")
         self.sync_engine = create_engine(sync_url)
 
-    async def download_historical(self, target_symbol: Optional[str] = None):
-        """Waterfall Sync: Optimized with Native-SQL Resampling (Zero-Network)."""
-        days_back = self.config.get("days_history", 30)
+    def _is_weekend(self, ts):
+        wd = ts.weekday()
+        hr = ts.hour
+        if wd == 5: return True
+        if wd == 4 and hr >= 22: return True
+        if wd == 6 and hr < 22: return True
+        return False
+
+    async def download_historical(self, target_symbol: Optional[str] = None, live_mode: bool = False):
+        """Waterfall Sync: Optimized for single pair or full market."""
+        days_back = 1 if live_mode else self.config.get("days_history", 30)
         now = datetime.now(timezone.utc)
-        default_start = now - timedelta(days=days_back)
+        limit_date = now - timedelta(days=days_back)
 
         sync_list = [target_symbol] if target_symbol else self.pairs
         
@@ -44,125 +50,78 @@ class PriceDownloader:
                 if pid: pair_map[s] = pid
 
             for symbol, pair_id in pair_map.items():
-                print(f"\n>>> Analyzing {symbol}...")
-                
-                # Check DB coverage for M1
                 stmt_max = select(func.max(OHLCVBarDB.timestamp)).where(
                     and_(OHLCVBarDB.pair_id == pair_id, OHLCVBarDB.timeframe == "M1")
                 )
                 last_ts = (await session.execute(stmt_max)).scalar()
+                start_date = (last_ts + timedelta(minutes=1)) if last_ts else limit_date
                 
-                start_date = (last_ts + timedelta(minutes=1)) if last_ts else default_start
-                
-                # Download M1 gap if needed
-                if start_date < (now - timedelta(hours=1)):
-                    from_str = start_date.strftime("%Y-%m-%d")
-                    print(f"    [INFO] Filling M1 gap from {from_str}...")
-                    await self._turbo_download_node(symbol, pair_id, from_str)
+                # Download M1 gap
+                if (now - start_date).total_seconds() > 900:
+                    await self._turbo_download_node(symbol, pair_id, start_date.strftime("%Y-%m-%d"))
 
-                # NATIVE-SQL HOTPATH: Resample directly in Postgres (Zero-Network)
-                # This is the fastest method possible. Data never leaves the database.
-                print(f"    [HOTPATH] Native SQL Resampling for {symbol}...")
-                await self.resample_native_sql(pair_id, symbol)
+                # Resample directly in Postgres
+                await self.resample_native_sql(pair_id, symbol, recent_only=live_mode)
 
-    async def resample_native_sql(self, pair_id: int, symbol: str):
-        """
-        Uses PostgreSQL native window functions for instant resampling.
-        Bypasses Python network overhead entirely.
-        """
-        timeframes = {
-            "M15": "15 minutes",
-            "M30": "30 minutes",
-            "H1": "1 hour",
-            "H4": "4 hours"
-        }
+    async def resample_native_sql(self, pair_id: int, symbol: str, recent_only: bool = False):
+        """Ultra-fast Resampling with Conflict Resolution."""
+        timeframes = {"M15": "15 minutes", "M30": "30 minutes", "H1": "1 hour", "H4": "4 hours"}
+        
+        # Determine the exact time limit for this operation
+        # For live, we rebuild the last 48h to catch any late data arrivals
+        limit_ts = (datetime.now(timezone.utc) - timedelta(hours=48 if recent_only else 87600))
+        limit_str = limit_ts.strftime('%Y-%m-%d %H:%M:%S')
 
         with self.sync_engine.begin() as conn:
             for tf_code, interval in timeframes.items():
-                # 1. Atomic clear: Delete referencing indicators first, then the bars
-                # This prevents ForeignKeyViolation errors
+                # 1. Clean existing indicators and bars in the targeted window
                 conn.execute(text(f"""
-                    DELETE FROM indicators 
-                    WHERE bar_id IN (
+                    DELETE FROM indicators WHERE bar_id IN (
                         SELECT id FROM ohlcv_bars 
-                        WHERE pair_id = {pair_id} AND timeframe = '{tf_code}'
+                        WHERE pair_id = {pair_id} AND timeframe = '{tf_code}' AND timestamp >= '{limit_str}'
                     )
                 """))
-                conn.execute(text(f"DELETE FROM ohlcv_bars WHERE pair_id = {pair_id} AND timeframe = '{tf_code}'"))
+                conn.execute(text(f"""
+                    DELETE FROM ohlcv_bars 
+                    WHERE pair_id = {pair_id} AND timeframe = '{tf_code}' AND timestamp >= '{limit_str}'
+                """))
                 
-                # 2. Native Resample: Group by Epoch bucket
-                # This logic accurately captures Open, High, Low, Close within each time block
+                # 2. Resample with ON CONFLICT resolution
                 sql = text(f"""
                     INSERT INTO ohlcv_bars (pair_id, timeframe, timestamp, open, high, low, close, volume, spread_pips)
                     SELECT 
-                        pair_id,
-                        '{tf_code}',
+                        pair_id, '{tf_code}',
                         (to_timestamp(floor(extract(epoch from timestamp) / extract(epoch from interval '{interval}')) * extract(epoch from interval '{interval}'))) AT TIME ZONE 'UTC' as bucket,
-                        (array_agg(open ORDER BY timestamp ASC))[1] as open,
-                        max(high) as high,
-                        min(low) as low,
-                        (array_agg(close ORDER BY timestamp DESC))[1] as close,
-                        sum(volume) as volume,
-                        0.0
+                        (array_agg(open ORDER BY timestamp ASC))[1], max(high), min(low), (array_agg(close ORDER BY timestamp DESC))[1], sum(volume), 0.0
                     FROM ohlcv_bars
-                    WHERE pair_id = :pid AND timeframe = 'M1'
+                    WHERE pair_id = :pid AND timeframe = 'M1' AND timestamp >= '{limit_str}'
                     GROUP BY pair_id, bucket
-                    ORDER BY bucket ASC
+                    ON CONFLICT (pair_id, timeframe, timestamp) DO NOTHING
                 """)
                 conn.execute(sql, {"pid": pair_id})
-                
-        print(f"      [DONE] {symbol} resampled into M15, M30, H1, H4.")
+        if not recent_only: print(f"      [DONE] {symbol} resampled.")
 
     async def _turbo_download_node(self, symbol, pair_id, from_date):
-        """High-speed bridge using dukascopy-node CLI."""
         instrument = symbol.lower().replace("_", "")
-        to_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        
         node_cmd = "dukascopy-node"
         if shutil.which(node_cmd) is None: node_cmd = "npx dukascopy-node"
-        
-        cmd = f"{node_cmd} -i {instrument} -from {from_date} -to {to_date} -t m1 -f csv"
-        
+        cmd = f"{node_cmd} -i {instrument} -from {from_date} -t m1 -f csv"
         try:
-            process = await asyncio.create_subprocess_shell(
-                cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            
+            process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            stdout, _ = await process.communicate()
             if process.returncode == 0 and stdout:
                 clean_csv = self._filter_garbage(stdout.decode('utf-8', errors='ignore'))
                 if clean_csv:
-                    await asyncio.to_thread(self._bulk_insert_csv, clean_csv, pair_id)
-            else:
-                logger.warning(f"Turbo failed for {symbol}: {stderr.decode() if stderr else 'No data'}")
-        except Exception as e:
-            logger.error(f"Turbo error: {e}")
-
-    def _bulk_insert_csv(self, csv_data, pair_id):
-        """Vectorized CSV import."""
-        try:
-            f = io.StringIO(csv_data)
-            df = pd.read_csv(f)
-            if df.empty: return
-
-            df.columns = [c.lower() for c in df.columns]
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            
-            # Prepare rows as list of dicts for bulk insert
-            bars = []
-            for r in df.itertuples():
-                bars.append({
-                    "pair_id": pair_id, "timeframe": "M1",
-                    "timestamp": r.timestamp.to_pydatetime().replace(tzinfo=timezone.utc),
-                    "open": r.open, "high": r.high, "low": r.low, "close": r.close,
-                    "volume": r.volume, "spread_pips": 0.0
-                })
-
-            if bars:
-                with self.sync_engine.begin() as conn:
-                    conn.execute(pg_insert(OHLCVBarDB).values(bars).on_conflict_do_nothing())
-        except Exception as e:
-            logger.error(f"Bulk insert failed: {e}")
+                    f = io.StringIO(clean_csv)
+                    df = pd.read_csv(f)
+                    df.columns = [c.lower() for c in df.columns]
+                    df['timestamp'] = pd.to_datetime(df['timestamp'])
+                    bars = [{"pair_id": pair_id, "timeframe": "M1", "timestamp": r.timestamp.to_pydatetime().replace(tzinfo=timezone.utc),
+                             "open": float(r.open), "high": float(r.high), "low": float(r.low), "close": float(r.close),
+                             "volume": float(r.volume), "spread_pips": 0.0} for r in df.itertuples()]
+                    with self.sync_engine.begin() as conn:
+                        conn.execute(pg_insert(OHLCVBarDB).values(bars).on_conflict_do_nothing())
+        except: pass
 
     def _filter_garbage(self, raw_stdout: str) -> str:
         lines = raw_stdout.splitlines()
@@ -172,4 +131,4 @@ class PriceDownloader:
         return ""
 
     async def _fill_live_gaps(self, symbol, pair_id, now):
-        await self.download_historical(target_symbol=symbol)
+        await self.download_historical(target_symbol=symbol, live_mode=True)

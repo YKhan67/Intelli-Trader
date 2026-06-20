@@ -12,9 +12,11 @@ class TradesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(tradeHistoryProvider(pair: pair.displayName));
+    final historyAsync = ref.watch(tradeHistoryProvider);
+    final filteredHistory = historyAsync.whenData((trades) => 
+        trades.where((t) => t.pair == pair).toList());
 
-    return historyAsync.when(
+    return filteredHistory.when(
       data: (trades) {
         if (trades.isEmpty) return const Center(child: Text("No trade history for this pair."));
         

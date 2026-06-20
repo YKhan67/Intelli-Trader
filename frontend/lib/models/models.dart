@@ -13,3 +13,5 @@ export 'account_info.dart';
 export 'open_trade.dart';
 export 'smc_zone.dart';
 export 'indicator_set.dart';
+export 'sentiment_overview.dart';
+export 'cot_data.dart';

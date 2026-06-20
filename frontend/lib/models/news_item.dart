@@ -8,13 +8,14 @@ part 'news_item.g.dart';
 @freezed
 class NewsItem with _$NewsItem {
   const factory NewsItem({
-    @JsonKey(name: 'article_uuid') required String articleUuid,
-    required DateTime timestamp,
-    required String source,
-    required String headline,
-    required String body,
-    @JsonKey(name: 'sentiment_score') required double sentimentScore,
-    @JsonKey(name: 'currencies_mentioned') required List<String> currenciesMentioned,
+    @JsonKey(name: 'article_uuid') @Default('') String articleUuid,
+    DateTime? timestamp,
+    @Default('Unknown') String source,
+    @Default('No Headline') String headline,
+    @Default('') String body,
+    @JsonKey(name: 'sentiment_score') @Default(0.0) double sentimentScore,
+    @JsonKey(name: 'currencies_mentioned') @Default([]) List<String> currenciesMentioned,
+    @Default('') String url,
   }) = _NewsItem;
 
   const NewsItem._();
@@ -28,8 +29,8 @@ class NewsItem with _$NewsItem {
   }
 
   Color get sentimentColor {
-    if (sentimentScore > 0.3) return AppColors.buy;
-    if (sentimentScore < -0.3) return AppColors.sell;
-    return AppColors.hold;
+    if (sentimentScore > 0.3) return AppColors.buyGreen;
+    if (sentimentScore < -0.3) return AppColors.sellRed;
+    return AppColors.textMuted;
   }
 }

@@ -20,28 +20,22 @@ PerformanceMetrics _$PerformanceMetricsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PerformanceMetrics {
-  @JsonKey(name: 'total_trades')
-  int get totalTrades => throw _privateConstructorUsedError;
-  @JsonKey(name: 'win_rate')
-  double get winRate => throw _privateConstructorUsedError;
-  @JsonKey(name: 'gross_profit')
-  double get grossProfit => throw _privateConstructorUsedError;
-  @JsonKey(name: 'gross_loss')
-  double get grossLoss => throw _privateConstructorUsedError;
-  @JsonKey(name: 'net_pnl')
-  double get netPnl => throw _privateConstructorUsedError;
-  @JsonKey(name: 'max_drawdown')
-  double get maxDrawdown => throw _privateConstructorUsedError;
-  @JsonKey(name: 'sharpe_ratio')
-  double get sharpeRatio => throw _privateConstructorUsedError;
-  @JsonKey(name: 'profit_factor')
-  double get profitFactor => throw _privateConstructorUsedError;
-  @JsonKey(name: 'avg_rr')
-  double get avgRR => throw _privateConstructorUsedError;
-  @JsonKey(name: 'best_trade_pips')
-  double get bestTradePips => throw _privateConstructorUsedError;
-  @JsonKey(name: 'worst_trade_pips')
-  double get worstTradePips => throw _privateConstructorUsedError;
+  Map<String, dynamic> get metrics => throw _privateConstructorUsedError;
+  @JsonKey(name: 'strategy_breakdown')
+  Map<String, dynamic> get strategyBreakdown =>
+      throw _privateConstructorUsedError;
+  @JsonKey(name: 'session_performance')
+  Map<String, double> get sessionPerformance =>
+      throw _privateConstructorUsedError;
+  @JsonKey(name: 'monthly_returns')
+  Map<String, double> get monthlyReturns => throw _privateConstructorUsedError;
+  @JsonKey(name: 'equity_curve')
+  List<Map<String, dynamic>> get equityCurve =>
+      throw _privateConstructorUsedError;
+  @JsonKey(name: 'best_trades')
+  List<TradeRecord> get bestTrades => throw _privateConstructorUsedError;
+  @JsonKey(name: 'worst_trades')
+  List<TradeRecord> get worstTrades => throw _privateConstructorUsedError;
 
   /// Serializes this PerformanceMetrics to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -60,17 +54,15 @@ abstract class $PerformanceMetricsCopyWith<$Res> {
       _$PerformanceMetricsCopyWithImpl<$Res, PerformanceMetrics>;
   @useResult
   $Res call(
-      {@JsonKey(name: 'total_trades') int totalTrades,
-      @JsonKey(name: 'win_rate') double winRate,
-      @JsonKey(name: 'gross_profit') double grossProfit,
-      @JsonKey(name: 'gross_loss') double grossLoss,
-      @JsonKey(name: 'net_pnl') double netPnl,
-      @JsonKey(name: 'max_drawdown') double maxDrawdown,
-      @JsonKey(name: 'sharpe_ratio') double sharpeRatio,
-      @JsonKey(name: 'profit_factor') double profitFactor,
-      @JsonKey(name: 'avg_rr') double avgRR,
-      @JsonKey(name: 'best_trade_pips') double bestTradePips,
-      @JsonKey(name: 'worst_trade_pips') double worstTradePips});
+      {Map<String, dynamic> metrics,
+      @JsonKey(name: 'strategy_breakdown')
+      Map<String, dynamic> strategyBreakdown,
+      @JsonKey(name: 'session_performance')
+      Map<String, double> sessionPerformance,
+      @JsonKey(name: 'monthly_returns') Map<String, double> monthlyReturns,
+      @JsonKey(name: 'equity_curve') List<Map<String, dynamic>> equityCurve,
+      @JsonKey(name: 'best_trades') List<TradeRecord> bestTrades,
+      @JsonKey(name: 'worst_trades') List<TradeRecord> worstTrades});
 }
 
 /// @nodoc
@@ -88,63 +80,43 @@ class _$PerformanceMetricsCopyWithImpl<$Res, $Val extends PerformanceMetrics>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? totalTrades = null,
-    Object? winRate = null,
-    Object? grossProfit = null,
-    Object? grossLoss = null,
-    Object? netPnl = null,
-    Object? maxDrawdown = null,
-    Object? sharpeRatio = null,
-    Object? profitFactor = null,
-    Object? avgRR = null,
-    Object? bestTradePips = null,
-    Object? worstTradePips = null,
+    Object? metrics = null,
+    Object? strategyBreakdown = null,
+    Object? sessionPerformance = null,
+    Object? monthlyReturns = null,
+    Object? equityCurve = null,
+    Object? bestTrades = null,
+    Object? worstTrades = null,
   }) {
     return _then(_value.copyWith(
-      totalTrades: null == totalTrades
-          ? _value.totalTrades
-          : totalTrades // ignore: cast_nullable_to_non_nullable
-              as int,
-      winRate: null == winRate
-          ? _value.winRate
-          : winRate // ignore: cast_nullable_to_non_nullable
-              as double,
-      grossProfit: null == grossProfit
-          ? _value.grossProfit
-          : grossProfit // ignore: cast_nullable_to_non_nullable
-              as double,
-      grossLoss: null == grossLoss
-          ? _value.grossLoss
-          : grossLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      netPnl: null == netPnl
-          ? _value.netPnl
-          : netPnl // ignore: cast_nullable_to_non_nullable
-              as double,
-      maxDrawdown: null == maxDrawdown
-          ? _value.maxDrawdown
-          : maxDrawdown // ignore: cast_nullable_to_non_nullable
-              as double,
-      sharpeRatio: null == sharpeRatio
-          ? _value.sharpeRatio
-          : sharpeRatio // ignore: cast_nullable_to_non_nullable
-              as double,
-      profitFactor: null == profitFactor
-          ? _value.profitFactor
-          : profitFactor // ignore: cast_nullable_to_non_nullable
-              as double,
-      avgRR: null == avgRR
-          ? _value.avgRR
-          : avgRR // ignore: cast_nullable_to_non_nullable
-              as double,
-      bestTradePips: null == bestTradePips
-          ? _value.bestTradePips
-          : bestTradePips // ignore: cast_nullable_to_non_nullable
-              as double,
-      worstTradePips: null == worstTradePips
-          ? _value.worstTradePips
-          : worstTradePips // ignore: cast_nullable_to_non_nullable
-              as double,
+      metrics: null == metrics
+          ? _value.metrics
+          : metrics // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      strategyBreakdown: null == strategyBreakdown
+          ? _value.strategyBreakdown
+          : strategyBreakdown // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      sessionPerformance: null == sessionPerformance
+          ? _value.sessionPerformance
+          : sessionPerformance // ignore: cast_nullable_to_non_nullable
+              as Map<String, double>,
+      monthlyReturns: null == monthlyReturns
+          ? _value.monthlyReturns
+          : monthlyReturns // ignore: cast_nullable_to_non_nullable
+              as Map<String, double>,
+      equityCurve: null == equityCurve
+          ? _value.equityCurve
+          : equityCurve // ignore: cast_nullable_to_non_nullable
+              as List<Map<String, dynamic>>,
+      bestTrades: null == bestTrades
+          ? _value.bestTrades
+          : bestTrades // ignore: cast_nullable_to_non_nullable
+              as List<TradeRecord>,
+      worstTrades: null == worstTrades
+          ? _value.worstTrades
+          : worstTrades // ignore: cast_nullable_to_non_nullable
+              as List<TradeRecord>,
     ) as $Val);
   }
 }
@@ -158,17 +130,15 @@ abstract class _$$PerformanceMetricsImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {@JsonKey(name: 'total_trades') int totalTrades,
-      @JsonKey(name: 'win_rate') double winRate,
-      @JsonKey(name: 'gross_profit') double grossProfit,
-      @JsonKey(name: 'gross_loss') double grossLoss,
-      @JsonKey(name: 'net_pnl') double netPnl,
-      @JsonKey(name: 'max_drawdown') double maxDrawdown,
-      @JsonKey(name: 'sharpe_ratio') double sharpeRatio,
-      @JsonKey(name: 'profit_factor') double profitFactor,
-      @JsonKey(name: 'avg_rr') double avgRR,
-      @JsonKey(name: 'best_trade_pips') double bestTradePips,
-      @JsonKey(name: 'worst_trade_pips') double worstTradePips});
+      {Map<String, dynamic> metrics,
+      @JsonKey(name: 'strategy_breakdown')
+      Map<String, dynamic> strategyBreakdown,
+      @JsonKey(name: 'session_performance')
+      Map<String, double> sessionPerformance,
+      @JsonKey(name: 'monthly_returns') Map<String, double> monthlyReturns,
+      @JsonKey(name: 'equity_curve') List<Map<String, dynamic>> equityCurve,
+      @JsonKey(name: 'best_trades') List<TradeRecord> bestTrades,
+      @JsonKey(name: 'worst_trades') List<TradeRecord> worstTrades});
 }
 
 /// @nodoc
@@ -184,63 +154,43 @@ class __$$PerformanceMetricsImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? totalTrades = null,
-    Object? winRate = null,
-    Object? grossProfit = null,
-    Object? grossLoss = null,
-    Object? netPnl = null,
-    Object? maxDrawdown = null,
-    Object? sharpeRatio = null,
-    Object? profitFactor = null,
-    Object? avgRR = null,
-    Object? bestTradePips = null,
-    Object? worstTradePips = null,
+    Object? metrics = null,
+    Object? strategyBreakdown = null,
+    Object? sessionPerformance = null,
+    Object? monthlyReturns = null,
+    Object? equityCurve = null,
+    Object? bestTrades = null,
+    Object? worstTrades = null,
   }) {
     return _then(_$PerformanceMetricsImpl(
-      totalTrades: null == totalTrades
-          ? _value.totalTrades
-          : totalTrades // ignore: cast_nullable_to_non_nullable
-              as int,
-      winRate: null == winRate
-          ? _value.winRate
-          : winRate // ignore: cast_nullable_to_non_nullable
-              as double,
-      grossProfit: null == grossProfit
-          ? _value.grossProfit
-          : grossProfit // ignore: cast_nullable_to_non_nullable
-              as double,
-      grossLoss: null == grossLoss
-          ? _value.grossLoss
-          : grossLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      netPnl: null == netPnl
-          ? _value.netPnl
-          : netPnl // ignore: cast_nullable_to_non_nullable
-              as double,
-      maxDrawdown: null == maxDrawdown
-          ? _value.maxDrawdown
-          : maxDrawdown // ignore: cast_nullable_to_non_nullable
-              as double,
-      sharpeRatio: null == sharpeRatio
-          ? _value.sharpeRatio
-          : sharpeRatio // ignore: cast_nullable_to_non_nullable
-              as double,
-      profitFactor: null == profitFactor
-          ? _value.profitFactor
-          : profitFactor // ignore: cast_nullable_to_non_nullable
-              as double,
-      avgRR: null == avgRR
-          ? _value.avgRR
-          : avgRR // ignore: cast_nullable_to_non_nullable
-              as double,
-      bestTradePips: null == bestTradePips
-          ? _value.bestTradePips
-          : bestTradePips // ignore: cast_nullable_to_non_nullable
-              as double,
-      worstTradePips: null == worstTradePips
-          ? _value.worstTradePips
-          : worstTradePips // ignore: cast_nullable_to_non_nullable
-              as double,
+      metrics: null == metrics
+          ? _value._metrics
+          : metrics // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      strategyBreakdown: null == strategyBreakdown
+          ? _value._strategyBreakdown
+          : strategyBreakdown // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      sessionPerformance: null == sessionPerformance
+          ? _value._sessionPerformance
+          : sessionPerformance // ignore: cast_nullable_to_non_nullable
+              as Map<String, double>,
+      monthlyReturns: null == monthlyReturns
+          ? _value._monthlyReturns
+          : monthlyReturns // ignore: cast_nullable_to_non_nullable
+              as Map<String, double>,
+      equityCurve: null == equityCurve
+          ? _value._equityCurve
+          : equityCurve // ignore: cast_nullable_to_non_nullable
+              as List<Map<String, dynamic>>,
+      bestTrades: null == bestTrades
+          ? _value._bestTrades
+          : bestTrades // ignore: cast_nullable_to_non_nullable
+              as List<TradeRecord>,
+      worstTrades: null == worstTrades
+          ? _value._worstTrades
+          : worstTrades // ignore: cast_nullable_to_non_nullable
+              as List<TradeRecord>,
     ));
   }
 }
@@ -249,58 +199,98 @@ class __$$PerformanceMetricsImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$PerformanceMetricsImpl implements _PerformanceMetrics {
   const _$PerformanceMetricsImpl(
-      {@JsonKey(name: 'total_trades') required this.totalTrades,
-      @JsonKey(name: 'win_rate') required this.winRate,
-      @JsonKey(name: 'gross_profit') required this.grossProfit,
-      @JsonKey(name: 'gross_loss') required this.grossLoss,
-      @JsonKey(name: 'net_pnl') required this.netPnl,
-      @JsonKey(name: 'max_drawdown') required this.maxDrawdown,
-      @JsonKey(name: 'sharpe_ratio') required this.sharpeRatio,
-      @JsonKey(name: 'profit_factor') required this.profitFactor,
-      @JsonKey(name: 'avg_rr') required this.avgRR,
-      @JsonKey(name: 'best_trade_pips') required this.bestTradePips,
-      @JsonKey(name: 'worst_trade_pips') required this.worstTradePips});
+      {final Map<String, dynamic> metrics = const {},
+      @JsonKey(name: 'strategy_breakdown')
+      final Map<String, dynamic> strategyBreakdown = const {},
+      @JsonKey(name: 'session_performance')
+      final Map<String, double> sessionPerformance = const {},
+      @JsonKey(name: 'monthly_returns')
+      final Map<String, double> monthlyReturns = const {},
+      @JsonKey(name: 'equity_curve')
+      final List<Map<String, dynamic>> equityCurve = const [],
+      @JsonKey(name: 'best_trades')
+      final List<TradeRecord> bestTrades = const [],
+      @JsonKey(name: 'worst_trades')
+      final List<TradeRecord> worstTrades = const []})
+      : _metrics = metrics,
+        _strategyBreakdown = strategyBreakdown,
+        _sessionPerformance = sessionPerformance,
+        _monthlyReturns = monthlyReturns,
+        _equityCurve = equityCurve,
+        _bestTrades = bestTrades,
+        _worstTrades = worstTrades;
 
   factory _$PerformanceMetricsImpl.fromJson(Map<String, dynamic> json) =>
       _$$PerformanceMetricsImplFromJson(json);
 
+  final Map<String, dynamic> _metrics;
   @override
-  @JsonKey(name: 'total_trades')
-  final int totalTrades;
+  @JsonKey()
+  Map<String, dynamic> get metrics {
+    if (_metrics is EqualUnmodifiableMapView) return _metrics;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_metrics);
+  }
+
+  final Map<String, dynamic> _strategyBreakdown;
   @override
-  @JsonKey(name: 'win_rate')
-  final double winRate;
+  @JsonKey(name: 'strategy_breakdown')
+  Map<String, dynamic> get strategyBreakdown {
+    if (_strategyBreakdown is EqualUnmodifiableMapView)
+      return _strategyBreakdown;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_strategyBreakdown);
+  }
+
+  final Map<String, double> _sessionPerformance;
   @override
-  @JsonKey(name: 'gross_profit')
-  final double grossProfit;
+  @JsonKey(name: 'session_performance')
+  Map<String, double> get sessionPerformance {
+    if (_sessionPerformance is EqualUnmodifiableMapView)
+      return _sessionPerformance;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_sessionPerformance);
+  }
+
+  final Map<String, double> _monthlyReturns;
   @override
-  @JsonKey(name: 'gross_loss')
-  final double grossLoss;
+  @JsonKey(name: 'monthly_returns')
+  Map<String, double> get monthlyReturns {
+    if (_monthlyReturns is EqualUnmodifiableMapView) return _monthlyReturns;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_monthlyReturns);
+  }
+
+  final List<Map<String, dynamic>> _equityCurve;
   @override
-  @JsonKey(name: 'net_pnl')
-  final double netPnl;
+  @JsonKey(name: 'equity_curve')
+  List<Map<String, dynamic>> get equityCurve {
+    if (_equityCurve is EqualUnmodifiableListView) return _equityCurve;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_equityCurve);
+  }
+
+  final List<TradeRecord> _bestTrades;
   @override
-  @JsonKey(name: 'max_drawdown')
-  final double maxDrawdown;
+  @JsonKey(name: 'best_trades')
+  List<TradeRecord> get bestTrades {
+    if (_bestTrades is EqualUnmodifiableListView) return _bestTrades;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_bestTrades);
+  }
+
+  final List<TradeRecord> _worstTrades;
   @override
-  @JsonKey(name: 'sharpe_ratio')
-  final double sharpeRatio;
-  @override
-  @JsonKey(name: 'profit_factor')
-  final double profitFactor;
-  @override
-  @JsonKey(name: 'avg_rr')
-  final double avgRR;
-  @override
-  @JsonKey(name: 'best_trade_pips')
-  final double bestTradePips;
-  @override
-  @JsonKey(name: 'worst_trade_pips')
-  final double worstTradePips;
+  @JsonKey(name: 'worst_trades')
+  List<TradeRecord> get worstTrades {
+    if (_worstTrades is EqualUnmodifiableListView) return _worstTrades;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_worstTrades);
+  }
 
   @override
   String toString() {
-    return 'PerformanceMetrics(totalTrades: $totalTrades, winRate: $winRate, grossProfit: $grossProfit, grossLoss: $grossLoss, netPnl: $netPnl, maxDrawdown: $maxDrawdown, sharpeRatio: $sharpeRatio, profitFactor: $profitFactor, avgRR: $avgRR, bestTradePips: $bestTradePips, worstTradePips: $worstTradePips)';
+    return 'PerformanceMetrics(metrics: $metrics, strategyBreakdown: $strategyBreakdown, sessionPerformance: $sessionPerformance, monthlyReturns: $monthlyReturns, equityCurve: $equityCurve, bestTrades: $bestTrades, worstTrades: $worstTrades)';
   }
 
   @override
@@ -308,42 +298,32 @@ class _$PerformanceMetricsImpl implements _PerformanceMetrics {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$PerformanceMetricsImpl &&
-            (identical(other.totalTrades, totalTrades) ||
-                other.totalTrades == totalTrades) &&
-            (identical(other.winRate, winRate) || other.winRate == winRate) &&
-            (identical(other.grossProfit, grossProfit) ||
-                other.grossProfit == grossProfit) &&
-            (identical(other.grossLoss, grossLoss) ||
-                other.grossLoss == grossLoss) &&
-            (identical(other.netPnl, netPnl) || other.netPnl == netPnl) &&
-            (identical(other.maxDrawdown, maxDrawdown) ||
-                other.maxDrawdown == maxDrawdown) &&
-            (identical(other.sharpeRatio, sharpeRatio) ||
-                other.sharpeRatio == sharpeRatio) &&
-            (identical(other.profitFactor, profitFactor) ||
-                other.profitFactor == profitFactor) &&
-            (identical(other.avgRR, avgRR) || other.avgRR == avgRR) &&
-            (identical(other.bestTradePips, bestTradePips) ||
-                other.bestTradePips == bestTradePips) &&
-            (identical(other.worstTradePips, worstTradePips) ||
-                other.worstTradePips == worstTradePips));
+            const DeepCollectionEquality().equals(other._metrics, _metrics) &&
+            const DeepCollectionEquality()
+                .equals(other._strategyBreakdown, _strategyBreakdown) &&
+            const DeepCollectionEquality()
+                .equals(other._sessionPerformance, _sessionPerformance) &&
+            const DeepCollectionEquality()
+                .equals(other._monthlyReturns, _monthlyReturns) &&
+            const DeepCollectionEquality()
+                .equals(other._equityCurve, _equityCurve) &&
+            const DeepCollectionEquality()
+                .equals(other._bestTrades, _bestTrades) &&
+            const DeepCollectionEquality()
+                .equals(other._worstTrades, _worstTrades));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType,
-      totalTrades,
-      winRate,
-      grossProfit,
-      grossLoss,
-      netPnl,
-      maxDrawdown,
-      sharpeRatio,
-      profitFactor,
-      avgRR,
-      bestTradePips,
-      worstTradePips);
+      const DeepCollectionEquality().hash(_metrics),
+      const DeepCollectionEquality().hash(_strategyBreakdown),
+      const DeepCollectionEquality().hash(_sessionPerformance),
+      const DeepCollectionEquality().hash(_monthlyReturns),
+      const DeepCollectionEquality().hash(_equityCurve),
+      const DeepCollectionEquality().hash(_bestTrades),
+      const DeepCollectionEquality().hash(_worstTrades));
 
   /// Create a copy of PerformanceMetrics
   /// with the given fields replaced by the non-null parameter values.
@@ -364,55 +344,42 @@ class _$PerformanceMetricsImpl implements _PerformanceMetrics {
 
 abstract class _PerformanceMetrics implements PerformanceMetrics {
   const factory _PerformanceMetrics(
-      {@JsonKey(name: 'total_trades') required final int totalTrades,
-      @JsonKey(name: 'win_rate') required final double winRate,
-      @JsonKey(name: 'gross_profit') required final double grossProfit,
-      @JsonKey(name: 'gross_loss') required final double grossLoss,
-      @JsonKey(name: 'net_pnl') required final double netPnl,
-      @JsonKey(name: 'max_drawdown') required final double maxDrawdown,
-      @JsonKey(name: 'sharpe_ratio') required final double sharpeRatio,
-      @JsonKey(name: 'profit_factor') required final double profitFactor,
-      @JsonKey(name: 'avg_rr') required final double avgRR,
-      @JsonKey(name: 'best_trade_pips') required final double bestTradePips,
-      @JsonKey(name: 'worst_trade_pips')
-      required final double worstTradePips}) = _$PerformanceMetricsImpl;
+          {final Map<String, dynamic> metrics,
+          @JsonKey(name: 'strategy_breakdown')
+          final Map<String, dynamic> strategyBreakdown,
+          @JsonKey(name: 'session_performance')
+          final Map<String, double> sessionPerformance,
+          @JsonKey(name: 'monthly_returns')
+          final Map<String, double> monthlyReturns,
+          @JsonKey(name: 'equity_curve')
+          final List<Map<String, dynamic>> equityCurve,
+          @JsonKey(name: 'best_trades') final List<TradeRecord> bestTrades,
+          @JsonKey(name: 'worst_trades') final List<TradeRecord> worstTrades}) =
+      _$PerformanceMetricsImpl;
 
   factory _PerformanceMetrics.fromJson(Map<String, dynamic> json) =
       _$PerformanceMetricsImpl.fromJson;
 
   @override
-  @JsonKey(name: 'total_trades')
-  int get totalTrades;
+  Map<String, dynamic> get metrics;
   @override
-  @JsonKey(name: 'win_rate')
-  double get winRate;
+  @JsonKey(name: 'strategy_breakdown')
+  Map<String, dynamic> get strategyBreakdown;
   @override
-  @JsonKey(name: 'gross_profit')
-  double get grossProfit;
+  @JsonKey(name: 'session_performance')
+  Map<String, double> get sessionPerformance;
   @override
-  @JsonKey(name: 'gross_loss')
-  double get grossLoss;
+  @JsonKey(name: 'monthly_returns')
+  Map<String, double> get monthlyReturns;
   @override
-  @JsonKey(name: 'net_pnl')
-  double get netPnl;
+  @JsonKey(name: 'equity_curve')
+  List<Map<String, dynamic>> get equityCurve;
   @override
-  @JsonKey(name: 'max_drawdown')
-  double get maxDrawdown;
+  @JsonKey(name: 'best_trades')
+  List<TradeRecord> get bestTrades;
   @override
-  @JsonKey(name: 'sharpe_ratio')
-  double get sharpeRatio;
-  @override
-  @JsonKey(name: 'profit_factor')
-  double get profitFactor;
-  @override
-  @JsonKey(name: 'avg_rr')
-  double get avgRR;
-  @override
-  @JsonKey(name: 'best_trade_pips')
-  double get bestTradePips;
-  @override
-  @JsonKey(name: 'worst_trade_pips')
-  double get worstTradePips;
+  @JsonKey(name: 'worst_trades')
+  List<TradeRecord> get worstTrades;
 
   /// Create a copy of PerformanceMetrics
   /// with the given fields replaced by the non-null parameter values.

@@ -9,20 +9,21 @@ class DailySummaryBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dailySummary = ref.watch(dailySummaryProvider);
+    final perf = ref.watch(performanceProvider).value;
     
-    if (dailySummary == null) {
+    if (perf == null) {
       return const SizedBox(height: 50); 
     }
 
-    final double pnl = dailySummary.netPnl;
-    final int tradeCount = dailySummary.totalTrades;
-    final double winRate = dailySummary.winRate;
-    final double drawdown = dailySummary.maxDrawdown;
+    final m = perf.metrics;
+    final double pnl = (m['net_pnl'] ?? 0.0).toDouble();
+    final int tradeCount = (m['total_trades'] ?? 0).toInt();
+    final double winRate = (m['win_rate'] ?? 0.0).toDouble();
+    final double drawdown = (m['max_drawdown'] ?? 0.0).toDouble();
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       child: Row(
         children: [
           _MetricTile(

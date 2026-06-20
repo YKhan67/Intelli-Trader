@@ -22,7 +22,7 @@ NewsItem _$NewsItemFromJson(Map<String, dynamic> json) {
 mixin _$NewsItem {
   @JsonKey(name: 'article_uuid')
   String get articleUuid => throw _privateConstructorUsedError;
-  DateTime get timestamp => throw _privateConstructorUsedError;
+  DateTime? get timestamp => throw _privateConstructorUsedError;
   String get source => throw _privateConstructorUsedError;
   String get headline => throw _privateConstructorUsedError;
   String get body => throw _privateConstructorUsedError;
@@ -30,6 +30,7 @@ mixin _$NewsItem {
   double get sentimentScore => throw _privateConstructorUsedError;
   @JsonKey(name: 'currencies_mentioned')
   List<String> get currenciesMentioned => throw _privateConstructorUsedError;
+  String get url => throw _privateConstructorUsedError;
 
   /// Serializes this NewsItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -48,12 +49,13 @@ abstract class $NewsItemCopyWith<$Res> {
   @useResult
   $Res call(
       {@JsonKey(name: 'article_uuid') String articleUuid,
-      DateTime timestamp,
+      DateTime? timestamp,
       String source,
       String headline,
       String body,
       @JsonKey(name: 'sentiment_score') double sentimentScore,
-      @JsonKey(name: 'currencies_mentioned') List<String> currenciesMentioned});
+      @JsonKey(name: 'currencies_mentioned') List<String> currenciesMentioned,
+      String url});
 }
 
 /// @nodoc
@@ -72,22 +74,23 @@ class _$NewsItemCopyWithImpl<$Res, $Val extends NewsItem>
   @override
   $Res call({
     Object? articleUuid = null,
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? source = null,
     Object? headline = null,
     Object? body = null,
     Object? sentimentScore = null,
     Object? currenciesMentioned = null,
+    Object? url = null,
   }) {
     return _then(_value.copyWith(
       articleUuid: null == articleUuid
           ? _value.articleUuid
           : articleUuid // ignore: cast_nullable_to_non_nullable
               as String,
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       source: null == source
           ? _value.source
           : source // ignore: cast_nullable_to_non_nullable
@@ -108,6 +111,10 @@ class _$NewsItemCopyWithImpl<$Res, $Val extends NewsItem>
           ? _value.currenciesMentioned
           : currenciesMentioned // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      url: null == url
+          ? _value.url
+          : url // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -122,12 +129,13 @@ abstract class _$$NewsItemImplCopyWith<$Res>
   @useResult
   $Res call(
       {@JsonKey(name: 'article_uuid') String articleUuid,
-      DateTime timestamp,
+      DateTime? timestamp,
       String source,
       String headline,
       String body,
       @JsonKey(name: 'sentiment_score') double sentimentScore,
-      @JsonKey(name: 'currencies_mentioned') List<String> currenciesMentioned});
+      @JsonKey(name: 'currencies_mentioned') List<String> currenciesMentioned,
+      String url});
 }
 
 /// @nodoc
@@ -144,22 +152,23 @@ class __$$NewsItemImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? articleUuid = null,
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? source = null,
     Object? headline = null,
     Object? body = null,
     Object? sentimentScore = null,
     Object? currenciesMentioned = null,
+    Object? url = null,
   }) {
     return _then(_$NewsItemImpl(
       articleUuid: null == articleUuid
           ? _value.articleUuid
           : articleUuid // ignore: cast_nullable_to_non_nullable
               as String,
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       source: null == source
           ? _value.source
           : source // ignore: cast_nullable_to_non_nullable
@@ -180,6 +189,10 @@ class __$$NewsItemImplCopyWithImpl<$Res>
           ? _value._currenciesMentioned
           : currenciesMentioned // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      url: null == url
+          ? _value.url
+          : url // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -188,14 +201,15 @@ class __$$NewsItemImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$NewsItemImpl extends _NewsItem {
   const _$NewsItemImpl(
-      {@JsonKey(name: 'article_uuid') required this.articleUuid,
-      required this.timestamp,
-      required this.source,
-      required this.headline,
-      required this.body,
-      @JsonKey(name: 'sentiment_score') required this.sentimentScore,
+      {@JsonKey(name: 'article_uuid') this.articleUuid = '',
+      this.timestamp,
+      this.source = 'Unknown',
+      this.headline = 'No Headline',
+      this.body = '',
+      @JsonKey(name: 'sentiment_score') this.sentimentScore = 0.0,
       @JsonKey(name: 'currencies_mentioned')
-      required final List<String> currenciesMentioned})
+      final List<String> currenciesMentioned = const [],
+      this.url = ''})
       : _currenciesMentioned = currenciesMentioned,
         super._();
 
@@ -206,12 +220,15 @@ class _$NewsItemImpl extends _NewsItem {
   @JsonKey(name: 'article_uuid')
   final String articleUuid;
   @override
-  final DateTime timestamp;
+  final DateTime? timestamp;
   @override
+  @JsonKey()
   final String source;
   @override
+  @JsonKey()
   final String headline;
   @override
+  @JsonKey()
   final String body;
   @override
   @JsonKey(name: 'sentiment_score')
@@ -227,8 +244,12 @@ class _$NewsItemImpl extends _NewsItem {
   }
 
   @override
+  @JsonKey()
+  final String url;
+
+  @override
   String toString() {
-    return 'NewsItem(articleUuid: $articleUuid, timestamp: $timestamp, source: $source, headline: $headline, body: $body, sentimentScore: $sentimentScore, currenciesMentioned: $currenciesMentioned)';
+    return 'NewsItem(articleUuid: $articleUuid, timestamp: $timestamp, source: $source, headline: $headline, body: $body, sentimentScore: $sentimentScore, currenciesMentioned: $currenciesMentioned, url: $url)';
   }
 
   @override
@@ -247,7 +268,8 @@ class _$NewsItemImpl extends _NewsItem {
             (identical(other.sentimentScore, sentimentScore) ||
                 other.sentimentScore == sentimentScore) &&
             const DeepCollectionEquality()
-                .equals(other._currenciesMentioned, _currenciesMentioned));
+                .equals(other._currenciesMentioned, _currenciesMentioned) &&
+            (identical(other.url, url) || other.url == url));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -260,7 +282,8 @@ class _$NewsItemImpl extends _NewsItem {
       headline,
       body,
       sentimentScore,
-      const DeepCollectionEquality().hash(_currenciesMentioned));
+      const DeepCollectionEquality().hash(_currenciesMentioned),
+      url);
 
   /// Create a copy of NewsItem
   /// with the given fields replaced by the non-null parameter values.
@@ -280,14 +303,15 @@ class _$NewsItemImpl extends _NewsItem {
 
 abstract class _NewsItem extends NewsItem {
   const factory _NewsItem(
-      {@JsonKey(name: 'article_uuid') required final String articleUuid,
-      required final DateTime timestamp,
-      required final String source,
-      required final String headline,
-      required final String body,
-      @JsonKey(name: 'sentiment_score') required final double sentimentScore,
+      {@JsonKey(name: 'article_uuid') final String articleUuid,
+      final DateTime? timestamp,
+      final String source,
+      final String headline,
+      final String body,
+      @JsonKey(name: 'sentiment_score') final double sentimentScore,
       @JsonKey(name: 'currencies_mentioned')
-      required final List<String> currenciesMentioned}) = _$NewsItemImpl;
+      final List<String> currenciesMentioned,
+      final String url}) = _$NewsItemImpl;
   const _NewsItem._() : super._();
 
   factory _NewsItem.fromJson(Map<String, dynamic> json) =
@@ -297,7 +321,7 @@ abstract class _NewsItem extends NewsItem {
   @JsonKey(name: 'article_uuid')
   String get articleUuid;
   @override
-  DateTime get timestamp;
+  DateTime? get timestamp;
   @override
   String get source;
   @override
@@ -310,6 +334,8 @@ abstract class _NewsItem extends NewsItem {
   @override
   @JsonKey(name: 'currencies_mentioned')
   List<String> get currenciesMentioned;
+  @override
+  String get url;
 
   /// Create a copy of NewsItem
   /// with the given fields replaced by the non-null parameter values.

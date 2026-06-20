@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
-import '../state/engine_provider.dart';
-import '../state/broker_provider.dart';
-import '../state/services_provider.dart';
-import '../utils/logger.dart';
+import 'package:forex_ai_frontend/models/models.dart';
+import 'package:forex_ai_frontend/state/engine_provider.dart';
+import 'package:forex_ai_frontend/state/connection_provider.dart';
+import 'package:forex_ai_frontend/state/services_provider.dart';
+import 'package:forex_ai_frontend/utils/logger.dart';
 
 class OrderExecutionService {
   final Ref _ref;
@@ -23,9 +23,9 @@ class OrderExecutionService {
   }
 
   Future<void> processSignal(BackendSignal signal) async {
-    final engineStatus = _ref.read(engineStatusProvider);
-    if (engineStatus != EngineStatus.running) {
-      logger.i("Signal ignored for ${signal.pair.displayName}: Engine is stopped");
+    final isRunning = _ref.read(engineStateProvider);
+    if (!isRunning) {
+      logger.i("Signal ignored for ${signal.pair.displayName}: Engine is stopped in UI");
       return;
     }
 
@@ -39,25 +39,30 @@ class OrderExecutionService {
       return;
     }
 
-    final brokerState = _ref.read(brokerProvider);
-    if (!brokerState.isConnected || brokerState.activeBroker == null) {
+    if (signal.action != SignalAction.buy && signal.action != SignalAction.sell) {
+      // Ignore HOLD or CLOSE signals for this automated entry flow
+      return;
+    }
+
+    final connection = _ref.read(brokerConnectionProvider);
+    final brokerService = _ref.read(brokerServiceProvider);
+    
+    if (connection.status != ConnectionStatus.connected || brokerService.activeBroker == null) {
       logger.w("Signal ignored for ${signal.pair.displayName}: Broker not connected");
       return;
     }
 
-    // Additional checks could go here (e.g. max drawdown, session check)
-    
     try {
       logger.i("Executing trade for ${signal.pair.displayName} via broker...");
       
       final direction = signal.action == SignalAction.buy ? Direction.long : Direction.short;
 
-      final ticketId = await brokerState.activeBroker!.placeOrder(
+      final ticketId = await brokerService.activeBroker!.placeOrder(
         signal.pair,
         direction,
-        signal.lotSize,
-        signal.stopLoss,
-        signal.takeProfit,
+        signal.lotSize ?? 0.01,
+        signal.stopLoss ?? 0.0,
+        signal.takeProfit ?? 0.0,
       );
       
       logger.i("Trade placed successfully. Ticket: $ticketId");
@@ -69,7 +74,6 @@ class OrderExecutionService {
         body: "${signal.action.name.toUpperCase()} ${signal.pair.displayName} @ ${signal.entryPrice}",
       );
 
-      // Start monitoring for partial close / exits if needed
       _startMonitoring(ticketId, signal);
       
     } catch (e) {
@@ -79,7 +83,6 @@ class OrderExecutionService {
 
   void _startMonitoring(String ticketId, BackendSignal signal) {
     // Monitor trade for dynamic exits or trail SL
-    // This could be moved to a separate TradeMonitorService for better scale
   }
 
   void stop() {

@@ -8,22 +8,33 @@ part of 'regime_result.dart';
 
 _$RegimeResultImpl _$$RegimeResultImplFromJson(Map<String, dynamic> json) =>
     _$RegimeResultImpl(
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      pair: const CurrencyPairConverter().fromJson(json['pair'] as String),
-      timeframe:
-          const TimeframeConverter().fromJson(json['timeframe'] as String),
-      regime: const RegimeConverter().fromJson(json['regime'] as String),
-      confidence: (json['confidence'] as num).toDouble(),
-      h4Bias: const DirectionConverter().fromJson(json['h4_bias'] as String),
-      h1Regime: const RegimeConverter().fromJson(json['h1_regime'] as String),
-      barsInRegime: (json['bars_in_regime'] as num).toInt(),
-      regimeChanged: json['regime_changed'] as bool,
-      durationWarning: json['duration_warning'] as bool,
+      timestamp: json['timestamp'] == null
+          ? null
+          : DateTime.parse(json['timestamp'] as String),
+      pair: json['pair'] == null
+          ? CurrencyPair.unknown
+          : const CurrencyPairConverter().fromJson(json['pair']),
+      timeframe: json['timeframe'] == null
+          ? Timeframe.h1
+          : const TimeframeConverter().fromJson(json['timeframe']),
+      regime: json['regime'] == null
+          ? Regime.unknown
+          : const RegimeConverter().fromJson(json['regime']),
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+      h4Bias: json['h4_bias'] == null
+          ? Direction.neutral
+          : const DirectionConverter().fromJson(json['h4_bias']),
+      h1Regime: json['h1_regime'] == null
+          ? Regime.unknown
+          : const RegimeConverter().fromJson(json['h1_regime']),
+      barsInRegime: (json['bars_in_regime'] as num?)?.toInt() ?? 0,
+      regimeChanged: json['regime_changed'] as bool? ?? false,
+      durationWarning: json['duration_warning'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$RegimeResultImplToJson(_$RegimeResultImpl instance) =>
     <String, dynamic>{
-      'timestamp': instance.timestamp.toIso8601String(),
+      'timestamp': instance.timestamp?.toIso8601String(),
       'pair': const CurrencyPairConverter().toJson(instance.pair),
       'timeframe': const TimeframeConverter().toJson(instance.timeframe),
       'regime': const RegimeConverter().toJson(instance.regime),

@@ -29,6 +29,10 @@ class SettingsScreen extends ConsumerWidget {
           _buildBrokerTile(context, ref),
 
           const SizedBox(height: AppSpacing.lg),
+          _buildSectionHeader(context, "Risk Management"),
+          _buildRiskControls(context, ref),
+
+          const SizedBox(height: AppSpacing.lg),
           _buildSectionHeader(context, "Trading Preferences"),
           _buildTradingModeSelector(context, ref, tradingMode),
           const SizedBox(height: AppSpacing.md),
@@ -42,22 +46,88 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(context, "System"),
           systemStatus.when(
             data: (status) => _buildSystemInfo(context, ref, status),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text("Error loading system info: $e"),
+            loading: () => const Center(child: LinearProgressIndicator()),
+            error: (e, _) => Text("System Status Error: $e", style: const TextStyle(fontSize: 10, color: Colors.grey)),
           ),
 
-          const SizedBox(height: AppSpacing.lg),
-          _buildSectionHeader(context, "About"),
-          systemStatus.when(
-            data: (status) => _buildAboutInfo(context, status['model_version']?.toString() ?? 'Unknown'),
-            loading: () => _buildAboutInfo(context, 'Loading...'),
-            error: (_, __) => _buildAboutInfo(context, 'Error'),
-          ),
-          
           const SizedBox(height: AppSpacing.xxl),
         ],
       ),
     );
+  }
+
+  Widget _buildRiskControls(BuildContext context, WidgetRef ref) {
+    final riskSettings = ref.watch(riskSettingsStateProvider);
+    final minRR = riskSettings['min_rr_ratio'] ?? 1.5;
+    final maxRisk = riskSettings['max_risk_per_trade'] ?? 0.01;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          children: [
+            _buildSliderRow(
+              "Min R:R Ratio",
+              minRR,
+              1.0,
+              5.0,
+              (val) => _updateRisk(ref, 'min_rr_ratio', val),
+              displayVal: minRR.toStringAsFixed(1),
+            ),
+            const Divider(),
+            _buildSliderRow(
+              "Max Risk %",
+              maxRisk * 100,
+              0.1,
+              5.0,
+              (val) => _updateRisk(ref, 'max_risk_per_trade', val / 100),
+              displayVal: "${(maxRisk * 100).toStringAsFixed(1)}%",
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSliderRow(String label, double val, double min, double max, Function(double) onChanged, {required String displayVal}) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              Text(displayVal, style: const TextStyle(fontSize: 12, color: AppColors.accentBlue)),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: Slider(
+            value: val,
+            min: min,
+            max: max,
+            activeColor: AppColors.accentBlue,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _updateRisk(WidgetRef ref, String key, double value) async {
+    ref.read(riskSettingsStateProvider.notifier).update(key, value);
+    
+    // Sync to backend
+    try {
+      final mode = ref.read(tradingModeStateProvider);
+      final pairs = ref.read(activePairsStateProvider);
+      final risk = ref.read(riskSettingsStateProvider);
+      await ref.read(backendServiceProvider).postSettings(mode, pairs, risk);
+    } catch (e) {
+      logger.e("Risk sync failed: $e");
+    }
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
@@ -74,14 +144,16 @@ class SettingsScreen extends ConsumerWidget {
     return FutureBuilder<Map<String, String?>>(
       future: ref.read(storageServiceProvider).getBackendConfig(),
       builder: (context, snapshot) {
-        final url = snapshot.data?['url'] ?? "Not configured";
-        final maskedUrl = url.length > 10 ? "${url.substring(0, 7)}***${url.substring(url.length - 3)}" : url;
+        final config = snapshot.data;
+        final url = config?['url'] ?? "Not configured";
+        
         return Card(
           child: ListTile(
-            title: Text(maskedUrl),
+            leading: const Icon(Icons.dns, color: AppColors.accentBlue),
+            title: Text(url, style: const TextStyle(fontSize: 14)),
             subtitle: const Text("Backend Connection"),
             trailing: TextButton(
-              onPressed: () => context.go('/login'),
+              onPressed: () => context.push('/login'),
               child: const Text("Edit"),
             ),
           ),
@@ -95,13 +167,14 @@ class SettingsScreen extends ConsumerWidget {
       future: ref.read(storageServiceProvider).getBrokerConfig(),
       builder: (context, snapshot) {
         final type = snapshot.data?['type'] as BrokerType?;
-        final typeName = type?.name.toUpperCase() ?? "Not configured";
+        final typeName = type?.name.toUpperCase() ?? "NOT CONNECTED";
         return Card(
           child: ListTile(
-            title: Text(typeName),
+            leading: const Icon(Icons.account_balance, color: AppColors.accentBlue),
+            title: Text(typeName, style: const TextStyle(fontSize: 14)),
             subtitle: const Text("Trading Broker"),
             trailing: TextButton(
-              onPressed: () => context.go('/login'),
+              onPressed: () => context.push('/login'),
               child: const Text("Change"),
             ),
           ),
@@ -134,43 +207,18 @@ class SettingsScreen extends ConsumerWidget {
                   try {
                     await ref.read(tradingModeStateProvider.notifier).setMode(mode);
                     final pairs = ref.read(activePairsStateProvider);
-                    await ref.read(backendServiceProvider).postSettings(mode, pairs);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Trading mode updated to ${mode.name.toUpperCase()}"), backgroundColor: AppColors.buyGreen),
-                      );
-                    }
+                    final risk = ref.read(riskSettingsStateProvider);
+                    await ref.read(backendServiceProvider).postSettings(mode, pairs, risk);
                   } catch (e) {
                     logger.e("Failed to update trading mode: $e");
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Failed to sync with backend: $e"), backgroundColor: AppColors.sellRed),
-                      );
-                    }
                   }
                 }
               },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              _getModeDescription(currentMode),
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _getModeDescription(TradingMode mode) {
-    switch (mode) {
-      case TradingMode.normal:
-        return "Standard institutional risk (1% per trade). Balanced growth and protection.";
-      case TradingMode.aggressive:
-        return "High risk for fast growth (3-5% per trade). Higher potential drawdown.";
-      case TradingMode.conservative:
-        return "Capital preservation (0.25-0.5% per trade). Minimal risk, steady gains.";
-    }
   }
 
   Widget _buildActivePairsList(BuildContext context, WidgetRef ref, List<CurrencyPair> activePairs) {
@@ -188,24 +236,14 @@ class SettingsScreen extends ConsumerWidget {
                 if (val == true) {
                   newPairs.add(pair);
                 } else {
-                  if (newPairs.length <= 1) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                       const SnackBar(content: Text("At least one currency pair must be active"), backgroundColor: AppColors.closeOrange),
-                     );
-                     return;
-                  }
-                  newPairs.remove(pair);
+                  if (newPairs.length > 1) newPairs.remove(pair);
                 }
                 await ref.read(activePairsStateProvider.notifier).setPairs(newPairs);
                 final mode = ref.read(tradingModeStateProvider);
-                await ref.read(backendServiceProvider).postSettings(mode, newPairs);
+                final risk = ref.read(riskSettingsStateProvider);
+                await ref.read(backendServiceProvider).postSettings(mode, newPairs, risk);
               } catch (e) {
                 logger.e("Failed to update active pairs: $e");
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to sync with backend: $e"), backgroundColor: AppColors.sellRed),
-                  );
-                }
               }
             },
           );
@@ -221,8 +259,6 @@ class SettingsScreen extends ConsumerWidget {
           _buildNotifySwitch("Circuit Breakers", true),
           _buildNotifySwitch("High Impact News", true),
           _buildNotifySwitch("Trade Opened", true),
-          _buildNotifySwitch("Trade Closed", true),
-          _buildNotifySwitch("Model Retrained", false),
         ],
       ),
     );
@@ -230,7 +266,7 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildNotifySwitch(String title, bool value) {
     return SwitchListTile(
-      title: Text(title),
+      title: Text(title, style: const TextStyle(fontSize: 14)),
       value: value,
       onChanged: (val) {},
       activeColor: AppColors.accentBlue,
@@ -238,100 +274,30 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildSystemInfo(BuildContext context, WidgetRef ref, Map<String, dynamic> status) {
-    final freshness = status['data_freshness'] as Map<String, dynamic>? ?? {};
+    final models = status['models'] as Map<String, dynamic>? ?? {};
     
     return Card(
       child: Column(
         children: [
+          ...models.entries.map((e) => ListTile(
+            dense: true,
+            title: Text(e.key, style: const TextStyle(fontSize: 11)),
+            trailing: Text(e.value.toString(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentBlue)),
+          )),
+          const Divider(),
           ListTile(
-            title: const Text("Model Version"),
-            trailing: Text(status['model_version']?.toString() ?? "Unknown"),
-          ),
-          ListTile(
-            title: const Text("Last Price Update"),
-            trailing: Text(freshness['prices'] != null 
-              ? freshness['prices'].toString().substring(11, 19) 
-              : "Never"),
-          ),
-          ListTile(
-            title: const Text("Last News Update"),
-            trailing: Text(freshness['news'] != null 
-              ? freshness['news'].toString().substring(11, 19)
-              : "Never"),
-          ),
-          ListTile(
-            title: const Text("Manual Retrain"),
+            title: const Text("Retrain AI Brain", style: TextStyle(fontSize: 13)),
             trailing: ElevatedButton(
-              onPressed: () => _showRetrainDialog(context, ref),
-              child: const Text("Trigger"),
+              onPressed: () => ref.read(backendServiceProvider).postRetrain(),
+              child: const Text("TRIGGER"),
             ),
           ),
           ListTile(
-            title: const Text("Clear Local Data", style: TextStyle(color: AppColors.sellRed)),
-            onTap: () => _showClearDataDialog(context, ref),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAboutInfo(BuildContext context, String backendVersion) {
-    return Card(
-      child: Column(
-        children: [
-          const ListTile(
-            title: Text("App Version"),
-            trailing: Text("1.0.0"),
-          ),
-          ListTile(
-            title: const Text("Backend Version"),
-            trailing: Text(backendVersion),
-          ),
-          const ListTile(
-            title: Text("Build Date"),
-            trailing: Text("Oct 2023"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showRetrainDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Trigger Retrain?"),
-        content: const Text("This will start a model retraining process in the background. It may take some time."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          TextButton(
-            onPressed: () {
-              ref.read(backendServiceProvider).postRetrain();
-              Navigator.pop(context);
-            }, 
-            child: const Text("Trigger"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showClearDataDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("CLEAR ALL DATA?", style: TextStyle(color: AppColors.sellRed)),
-        content: const Text("This will permanently delete all saved credentials and preferences. You will be logged out."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          TextButton(
-            onPressed: () async {
+            title: const Text("Reset App Configuration", style: TextStyle(color: AppColors.sellRed, fontSize: 13)),
+            onTap: () async {
               await ref.read(storageServiceProvider).clearAll();
-              if (context.mounted) {
-                context.go('/login');
-              }
-            }, 
-            child: const Text("CLEAR", style: TextStyle(color: AppColors.sellRed)),
+              if (context.mounted) context.go('/login');
+            },
           ),
         ],
       ),

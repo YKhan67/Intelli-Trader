@@ -1,9 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../models/signal.dart';
-import '../models/trade_record.dart';
-import '../models/market_data.dart';
-import '../models/system_alert.dart';
+import '../models/models.dart';
 
 class ApiService {
   late Dio _dio;

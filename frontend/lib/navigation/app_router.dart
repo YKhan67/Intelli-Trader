@@ -18,6 +18,8 @@ final appRouterPrv = Provider<GoRouter>((ref) {
     redirect: (context, state) async {
       final storage = ref.read(storageServiceProvider);
       final config = await storage.getBackendConfig();
+      
+      // If we have our rescue URL or a saved URL, we allow entry
       final hasConfig = config['url'] != null;
 
       final isSplash = state.matchedLocation == '/';
@@ -27,7 +29,8 @@ final appRouterPrv = Provider<GoRouter>((ref) {
         return '/login';
       }
       
-      if (hasConfig && (isLogin || isSplash)) {
+      // Redirect to dashboard from splash only if we have config
+      if (hasConfig && isSplash) {
         return '/dashboard';
       }
 

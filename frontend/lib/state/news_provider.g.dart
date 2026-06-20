@@ -154,6 +154,22 @@ class _NewsProviderElement extends FutureProviderElement<List<NewsItem>>
   CurrencyPair get pair => (origin as NewsProvider).pair;
 }
 
+String _$allNewsHash() => r'3957ec412e7201cc7eb65c368831834b0b56aaf3';
+
+/// See also [allNews].
+@ProviderFor(allNews)
+final allNewsProvider = FutureProvider<List<NewsItem>>.internal(
+  allNews,
+  name: r'allNewsProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$allNewsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AllNewsRef = FutureProviderRef<List<NewsItem>>;
 String _$calendarHash() => r'deeac6876d9f9c434b27f4500c74efac4e76ecdb';
 
 /// See also [calendar].

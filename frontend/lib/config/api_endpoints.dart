@@ -5,6 +5,8 @@ class ApiEndpoints {
   static const String allSignals = '/market/signals/all';
   static const String market = '/market';
   static const String news = '/market/news';
+  static const String allNews = '/market/news/all';
+  static const String sentimentOverview = '/market/sentiment/all';
   static const String calendar = '/market/calendar/events';
   static const String openTrades = '/trades/open';
   static const String tradeHistory = '/trades/history';

@@ -191,8 +191,12 @@ class DecisionEngine:
 
             try:
                 cache_key = f"signal:{pair}:{tf_key}"
-                await self.redis.set(cache_key, signal.model_dump_json(), ex=7200)
-                await self.redis.set(f"signal:{pair}:latest", signal.model_dump_json())
+                signal_json = signal.model_dump_json()
+                await self.redis.set(cache_key, signal_json, ex=7200)
+                await self.redis.set(f"signal:{pair}:latest", signal_json)
+                
+                # PUBLISH to WebSocket channel
+                await self.redis.publish(f"channel:signals:{pair}", signal_json)
             except: pass
 
             return signal

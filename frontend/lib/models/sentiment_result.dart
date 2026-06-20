@@ -8,16 +8,16 @@ part 'sentiment_result.g.dart';
 @freezed
 class SentimentResult with _$SentimentResult {
   const factory SentimentResult({
-    required DateTime timestamp,
-    @CurrencyPairConverter() required CurrencyPair pair,
-    @JsonKey(name: 'currency_scores') required Map<String, double> currencyScores,
-    @JsonKey(name: 'pair_score') required double pairScore,
-    @JsonKey(name: 'pre_news_block') required bool preNewsBlock,
-    @JsonKey(name: 'hard_block') required bool hardBlock,
-    @JsonKey(name: 'post_news_window') required bool postNewsWindow,
-    @JsonKey(name: 'cot_bias') @DirectionConverter() required Direction cotBias,
-    @JsonKey(name: 'top_headlines') required List<String> topHeadlines,
-    @JsonKey(name: 'sentiment_trend') required String sentimentTrend,
+    DateTime? timestamp,
+    @CurrencyPairConverter() @Default(CurrencyPair.unknown) CurrencyPair pair,
+    @JsonKey(name: 'currency_scores') @Default({}) Map<String, double> currencyScores,
+    @JsonKey(name: 'pair_score') @Default(0.0) double pairScore,
+    @JsonKey(name: 'pre_news_block') @Default(false) bool preNewsBlock,
+    @JsonKey(name: 'hard_block') @Default(false) bool hardBlock,
+    @JsonKey(name: 'post_news_window') @Default(false) bool postNewsWindow,
+    @JsonKey(name: 'cot_bias') @DirectionConverter() @Default(Direction.neutral) Direction cotBias,
+    @JsonKey(name: 'top_headlines') @Default([]) List<String> topHeadlines,
+    @JsonKey(name: 'sentiment_trend') @Default('stable') String sentimentTrend,
   }) = _SentimentResult;
 
   factory SentimentResult.fromJson(Map<String, dynamic> json) => _$SentimentResultFromJson(json);

@@ -15,7 +15,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _urlController = TextEditingController(text: "http://localhost:8000");
+  final _urlController = TextEditingController(text: "http://localhost:8081");
   final _apiKeyController = TextEditingController();
   bool _obscureApiKey = true;
   bool _backendTested = false;

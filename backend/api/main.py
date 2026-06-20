@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from contextlib import asynccontextmanager
 
-from .routers import market, trades, risk, system
+from .routers import market, trades, risk, system, account
 from backend.live_engine import get_engine
 
 logger = logging.getLogger("API")
@@ -43,6 +43,9 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown logic
     logger.info("ForexAI API Shutting down...")
+    engine = get_engine()
+    await engine.stop()
+    logger.info("ForexAI background workers stopped.")
 
 app = FastAPI(
     title="Intelli-Trader AI API",
@@ -65,6 +68,7 @@ app.include_router(market.router)
 app.include_router(trades.router)
 app.include_router(risk.router)
 app.include_router(system.router)
+app.include_router(account.router)
 
 @app.get("/health")
 async def health_check():

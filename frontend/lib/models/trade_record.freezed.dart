@@ -34,16 +34,23 @@ mixin _$TradeRecord {
   Timeframe get timeframe => throw _privateConstructorUsedError;
   @SessionConverter()
   Session get session => throw _privateConstructorUsedError;
+  @RegimeConverter()
+  @JsonKey(name: 'regime_at_entry')
+  Regime get regimeAtEntry => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sentiment_at_entry')
+  double get sentimentAtEntry => throw _privateConstructorUsedError;
+  @JsonKey(name: 'confidence_at_entry')
+  double get confidenceAtEntry => throw _privateConstructorUsedError;
   @JsonKey(name: 'entry_price')
-  double get entryPrice => throw _privateConstructorUsedError;
+  double? get entryPrice => throw _privateConstructorUsedError;
   @JsonKey(name: 'entry_time')
-  DateTime get entryTime => throw _privateConstructorUsedError;
+  DateTime? get entryTime => throw _privateConstructorUsedError;
   @JsonKey(name: 'lot_size')
-  double get lotSize => throw _privateConstructorUsedError;
+  double? get lotSize => throw _privateConstructorUsedError;
   @JsonKey(name: 'stop_loss')
-  double get stopLoss => throw _privateConstructorUsedError;
+  double? get stopLoss => throw _privateConstructorUsedError;
   @JsonKey(name: 'take_profit')
-  double get takeProfit => throw _privateConstructorUsedError;
+  double? get takeProfit => throw _privateConstructorUsedError;
   @JsonKey(name: 'exit_price')
   double? get exitPrice => throw _privateConstructorUsedError;
   @JsonKey(name: 'exit_time')
@@ -51,16 +58,19 @@ mixin _$TradeRecord {
   @ExitReasonConverter()
   @JsonKey(name: 'exit_reason')
   ExitReason? get exitReason => throw _privateConstructorUsedError;
+  double get commission => throw _privateConstructorUsedError;
+  double get swap => throw _privateConstructorUsedError;
   @JsonKey(name: 'pips_result')
   double? get pipsResult => throw _privateConstructorUsedError;
   @JsonKey(name: 'profit_loss')
   double? get profitLoss => throw _privateConstructorUsedError;
   @JsonKey(name: 'net_profit_loss')
   double? get netProfitLoss => throw _privateConstructorUsedError;
-  @JsonKey(name: 'confidence_at_entry')
-  double get confidenceAtEntry => throw _privateConstructorUsedError;
   @OrderStatusConverter()
   OrderStatus get status => throw _privateConstructorUsedError;
+  @TradeTypeConverter()
+  @JsonKey(name: 'trade_type')
+  TradeType get tradeType => throw _privateConstructorUsedError;
 
   /// Serializes this TradeRecord to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -86,21 +96,26 @@ abstract class $TradeRecordCopyWith<$Res> {
       @DirectionConverter() Direction direction,
       @TimeframeConverter() Timeframe timeframe,
       @SessionConverter() Session session,
-      @JsonKey(name: 'entry_price') double entryPrice,
-      @JsonKey(name: 'entry_time') DateTime entryTime,
-      @JsonKey(name: 'lot_size') double lotSize,
-      @JsonKey(name: 'stop_loss') double stopLoss,
-      @JsonKey(name: 'take_profit') double takeProfit,
+      @RegimeConverter() @JsonKey(name: 'regime_at_entry') Regime regimeAtEntry,
+      @JsonKey(name: 'sentiment_at_entry') double sentimentAtEntry,
+      @JsonKey(name: 'confidence_at_entry') double confidenceAtEntry,
+      @JsonKey(name: 'entry_price') double? entryPrice,
+      @JsonKey(name: 'entry_time') DateTime? entryTime,
+      @JsonKey(name: 'lot_size') double? lotSize,
+      @JsonKey(name: 'stop_loss') double? stopLoss,
+      @JsonKey(name: 'take_profit') double? takeProfit,
       @JsonKey(name: 'exit_price') double? exitPrice,
       @JsonKey(name: 'exit_time') DateTime? exitTime,
       @ExitReasonConverter()
       @JsonKey(name: 'exit_reason')
       ExitReason? exitReason,
+      double commission,
+      double swap,
       @JsonKey(name: 'pips_result') double? pipsResult,
       @JsonKey(name: 'profit_loss') double? profitLoss,
       @JsonKey(name: 'net_profit_loss') double? netProfitLoss,
-      @JsonKey(name: 'confidence_at_entry') double confidenceAtEntry,
-      @OrderStatusConverter() OrderStatus status});
+      @OrderStatusConverter() OrderStatus status,
+      @TradeTypeConverter() @JsonKey(name: 'trade_type') TradeType tradeType});
 }
 
 /// @nodoc
@@ -125,19 +140,24 @@ class _$TradeRecordCopyWithImpl<$Res, $Val extends TradeRecord>
     Object? direction = null,
     Object? timeframe = null,
     Object? session = null,
-    Object? entryPrice = null,
-    Object? entryTime = null,
-    Object? lotSize = null,
-    Object? stopLoss = null,
-    Object? takeProfit = null,
+    Object? regimeAtEntry = null,
+    Object? sentimentAtEntry = null,
+    Object? confidenceAtEntry = null,
+    Object? entryPrice = freezed,
+    Object? entryTime = freezed,
+    Object? lotSize = freezed,
+    Object? stopLoss = freezed,
+    Object? takeProfit = freezed,
     Object? exitPrice = freezed,
     Object? exitTime = freezed,
     Object? exitReason = freezed,
+    Object? commission = null,
+    Object? swap = null,
     Object? pipsResult = freezed,
     Object? profitLoss = freezed,
     Object? netProfitLoss = freezed,
-    Object? confidenceAtEntry = null,
     Object? status = null,
+    Object? tradeType = null,
   }) {
     return _then(_value.copyWith(
       tradeUuid: null == tradeUuid
@@ -168,26 +188,38 @@ class _$TradeRecordCopyWithImpl<$Res, $Val extends TradeRecord>
           ? _value.session
           : session // ignore: cast_nullable_to_non_nullable
               as Session,
-      entryPrice: null == entryPrice
+      regimeAtEntry: null == regimeAtEntry
+          ? _value.regimeAtEntry
+          : regimeAtEntry // ignore: cast_nullable_to_non_nullable
+              as Regime,
+      sentimentAtEntry: null == sentimentAtEntry
+          ? _value.sentimentAtEntry
+          : sentimentAtEntry // ignore: cast_nullable_to_non_nullable
+              as double,
+      confidenceAtEntry: null == confidenceAtEntry
+          ? _value.confidenceAtEntry
+          : confidenceAtEntry // ignore: cast_nullable_to_non_nullable
+              as double,
+      entryPrice: freezed == entryPrice
           ? _value.entryPrice
           : entryPrice // ignore: cast_nullable_to_non_nullable
-              as double,
-      entryTime: null == entryTime
+              as double?,
+      entryTime: freezed == entryTime
           ? _value.entryTime
           : entryTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      lotSize: null == lotSize
+              as DateTime?,
+      lotSize: freezed == lotSize
           ? _value.lotSize
           : lotSize // ignore: cast_nullable_to_non_nullable
-              as double,
-      stopLoss: null == stopLoss
+              as double?,
+      stopLoss: freezed == stopLoss
           ? _value.stopLoss
           : stopLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      takeProfit: null == takeProfit
+              as double?,
+      takeProfit: freezed == takeProfit
           ? _value.takeProfit
           : takeProfit // ignore: cast_nullable_to_non_nullable
-              as double,
+              as double?,
       exitPrice: freezed == exitPrice
           ? _value.exitPrice
           : exitPrice // ignore: cast_nullable_to_non_nullable
@@ -200,6 +232,14 @@ class _$TradeRecordCopyWithImpl<$Res, $Val extends TradeRecord>
           ? _value.exitReason
           : exitReason // ignore: cast_nullable_to_non_nullable
               as ExitReason?,
+      commission: null == commission
+          ? _value.commission
+          : commission // ignore: cast_nullable_to_non_nullable
+              as double,
+      swap: null == swap
+          ? _value.swap
+          : swap // ignore: cast_nullable_to_non_nullable
+              as double,
       pipsResult: freezed == pipsResult
           ? _value.pipsResult
           : pipsResult // ignore: cast_nullable_to_non_nullable
@@ -212,14 +252,14 @@ class _$TradeRecordCopyWithImpl<$Res, $Val extends TradeRecord>
           ? _value.netProfitLoss
           : netProfitLoss // ignore: cast_nullable_to_non_nullable
               as double?,
-      confidenceAtEntry: null == confidenceAtEntry
-          ? _value.confidenceAtEntry
-          : confidenceAtEntry // ignore: cast_nullable_to_non_nullable
-              as double,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as OrderStatus,
+      tradeType: null == tradeType
+          ? _value.tradeType
+          : tradeType // ignore: cast_nullable_to_non_nullable
+              as TradeType,
     ) as $Val);
   }
 }
@@ -240,21 +280,26 @@ abstract class _$$TradeRecordImplCopyWith<$Res>
       @DirectionConverter() Direction direction,
       @TimeframeConverter() Timeframe timeframe,
       @SessionConverter() Session session,
-      @JsonKey(name: 'entry_price') double entryPrice,
-      @JsonKey(name: 'entry_time') DateTime entryTime,
-      @JsonKey(name: 'lot_size') double lotSize,
-      @JsonKey(name: 'stop_loss') double stopLoss,
-      @JsonKey(name: 'take_profit') double takeProfit,
+      @RegimeConverter() @JsonKey(name: 'regime_at_entry') Regime regimeAtEntry,
+      @JsonKey(name: 'sentiment_at_entry') double sentimentAtEntry,
+      @JsonKey(name: 'confidence_at_entry') double confidenceAtEntry,
+      @JsonKey(name: 'entry_price') double? entryPrice,
+      @JsonKey(name: 'entry_time') DateTime? entryTime,
+      @JsonKey(name: 'lot_size') double? lotSize,
+      @JsonKey(name: 'stop_loss') double? stopLoss,
+      @JsonKey(name: 'take_profit') double? takeProfit,
       @JsonKey(name: 'exit_price') double? exitPrice,
       @JsonKey(name: 'exit_time') DateTime? exitTime,
       @ExitReasonConverter()
       @JsonKey(name: 'exit_reason')
       ExitReason? exitReason,
+      double commission,
+      double swap,
       @JsonKey(name: 'pips_result') double? pipsResult,
       @JsonKey(name: 'profit_loss') double? profitLoss,
       @JsonKey(name: 'net_profit_loss') double? netProfitLoss,
-      @JsonKey(name: 'confidence_at_entry') double confidenceAtEntry,
-      @OrderStatusConverter() OrderStatus status});
+      @OrderStatusConverter() OrderStatus status,
+      @TradeTypeConverter() @JsonKey(name: 'trade_type') TradeType tradeType});
 }
 
 /// @nodoc
@@ -277,19 +322,24 @@ class __$$TradeRecordImplCopyWithImpl<$Res>
     Object? direction = null,
     Object? timeframe = null,
     Object? session = null,
-    Object? entryPrice = null,
-    Object? entryTime = null,
-    Object? lotSize = null,
-    Object? stopLoss = null,
-    Object? takeProfit = null,
+    Object? regimeAtEntry = null,
+    Object? sentimentAtEntry = null,
+    Object? confidenceAtEntry = null,
+    Object? entryPrice = freezed,
+    Object? entryTime = freezed,
+    Object? lotSize = freezed,
+    Object? stopLoss = freezed,
+    Object? takeProfit = freezed,
     Object? exitPrice = freezed,
     Object? exitTime = freezed,
     Object? exitReason = freezed,
+    Object? commission = null,
+    Object? swap = null,
     Object? pipsResult = freezed,
     Object? profitLoss = freezed,
     Object? netProfitLoss = freezed,
-    Object? confidenceAtEntry = null,
     Object? status = null,
+    Object? tradeType = null,
   }) {
     return _then(_$TradeRecordImpl(
       tradeUuid: null == tradeUuid
@@ -320,26 +370,38 @@ class __$$TradeRecordImplCopyWithImpl<$Res>
           ? _value.session
           : session // ignore: cast_nullable_to_non_nullable
               as Session,
-      entryPrice: null == entryPrice
+      regimeAtEntry: null == regimeAtEntry
+          ? _value.regimeAtEntry
+          : regimeAtEntry // ignore: cast_nullable_to_non_nullable
+              as Regime,
+      sentimentAtEntry: null == sentimentAtEntry
+          ? _value.sentimentAtEntry
+          : sentimentAtEntry // ignore: cast_nullable_to_non_nullable
+              as double,
+      confidenceAtEntry: null == confidenceAtEntry
+          ? _value.confidenceAtEntry
+          : confidenceAtEntry // ignore: cast_nullable_to_non_nullable
+              as double,
+      entryPrice: freezed == entryPrice
           ? _value.entryPrice
           : entryPrice // ignore: cast_nullable_to_non_nullable
-              as double,
-      entryTime: null == entryTime
+              as double?,
+      entryTime: freezed == entryTime
           ? _value.entryTime
           : entryTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      lotSize: null == lotSize
+              as DateTime?,
+      lotSize: freezed == lotSize
           ? _value.lotSize
           : lotSize // ignore: cast_nullable_to_non_nullable
-              as double,
-      stopLoss: null == stopLoss
+              as double?,
+      stopLoss: freezed == stopLoss
           ? _value.stopLoss
           : stopLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      takeProfit: null == takeProfit
+              as double?,
+      takeProfit: freezed == takeProfit
           ? _value.takeProfit
           : takeProfit // ignore: cast_nullable_to_non_nullable
-              as double,
+              as double?,
       exitPrice: freezed == exitPrice
           ? _value.exitPrice
           : exitPrice // ignore: cast_nullable_to_non_nullable
@@ -352,6 +414,14 @@ class __$$TradeRecordImplCopyWithImpl<$Res>
           ? _value.exitReason
           : exitReason // ignore: cast_nullable_to_non_nullable
               as ExitReason?,
+      commission: null == commission
+          ? _value.commission
+          : commission // ignore: cast_nullable_to_non_nullable
+              as double,
+      swap: null == swap
+          ? _value.swap
+          : swap // ignore: cast_nullable_to_non_nullable
+              as double,
       pipsResult: freezed == pipsResult
           ? _value.pipsResult
           : pipsResult // ignore: cast_nullable_to_non_nullable
@@ -364,14 +434,14 @@ class __$$TradeRecordImplCopyWithImpl<$Res>
           ? _value.netProfitLoss
           : netProfitLoss // ignore: cast_nullable_to_non_nullable
               as double?,
-      confidenceAtEntry: null == confidenceAtEntry
-          ? _value.confidenceAtEntry
-          : confidenceAtEntry // ignore: cast_nullable_to_non_nullable
-              as double,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as OrderStatus,
+      tradeType: null == tradeType
+          ? _value.tradeType
+          : tradeType // ignore: cast_nullable_to_non_nullable
+              as TradeType,
     ));
   }
 }
@@ -380,26 +450,37 @@ class __$$TradeRecordImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TradeRecordImpl extends _TradeRecord {
   const _$TradeRecordImpl(
-      {@JsonKey(name: 'trade_uuid') required this.tradeUuid,
-      @JsonKey(name: 'broker_order_id') required this.brokerOrderId,
-      @CurrencyPairConverter() required this.pair,
-      @StrategyConverter() required this.strategy,
-      @DirectionConverter() required this.direction,
-      @TimeframeConverter() required this.timeframe,
-      @SessionConverter() required this.session,
-      @JsonKey(name: 'entry_price') required this.entryPrice,
-      @JsonKey(name: 'entry_time') required this.entryTime,
-      @JsonKey(name: 'lot_size') required this.lotSize,
-      @JsonKey(name: 'stop_loss') required this.stopLoss,
-      @JsonKey(name: 'take_profit') required this.takeProfit,
+      {@JsonKey(name: 'trade_uuid') this.tradeUuid = '',
+      @JsonKey(name: 'broker_order_id') this.brokerOrderId,
+      @CurrencyPairConverter() this.pair = CurrencyPair.unknown,
+      @StrategyConverter() this.strategy = Strategy.skip,
+      @DirectionConverter() this.direction = Direction.neutral,
+      @TimeframeConverter() this.timeframe = Timeframe.h1,
+      @SessionConverter() this.session = Session.deadZone,
+      @RegimeConverter()
+      @JsonKey(name: 'regime_at_entry')
+      this.regimeAtEntry = Regime.unknown,
+      @JsonKey(name: 'sentiment_at_entry') this.sentimentAtEntry = 0.0,
+      @JsonKey(name: 'confidence_at_entry') this.confidenceAtEntry = 0.0,
+      @JsonKey(name: 'entry_price') this.entryPrice,
+      @JsonKey(name: 'entry_time') this.entryTime,
+      @JsonKey(name: 'lot_size') this.lotSize,
+      @JsonKey(name: 'stop_loss') this.stopLoss,
+      @JsonKey(name: 'take_profit') this.takeProfit,
       @JsonKey(name: 'exit_price') this.exitPrice,
       @JsonKey(name: 'exit_time') this.exitTime,
-      @ExitReasonConverter() @JsonKey(name: 'exit_reason') this.exitReason,
-      @JsonKey(name: 'pips_result') this.pipsResult,
-      @JsonKey(name: 'profit_loss') this.profitLoss,
-      @JsonKey(name: 'net_profit_loss') this.netProfitLoss,
-      @JsonKey(name: 'confidence_at_entry') required this.confidenceAtEntry,
-      @OrderStatusConverter() required this.status})
+      @ExitReasonConverter()
+      @JsonKey(name: 'exit_reason')
+      this.exitReason = ExitReason.manualClose,
+      this.commission = 0.0,
+      this.swap = 0.0,
+      @JsonKey(name: 'pips_result') this.pipsResult = 0.0,
+      @JsonKey(name: 'profit_loss') this.profitLoss = 0.0,
+      @JsonKey(name: 'net_profit_loss') this.netProfitLoss = 0.0,
+      @OrderStatusConverter() this.status = OrderStatus.closed,
+      @TradeTypeConverter()
+      @JsonKey(name: 'trade_type')
+      this.tradeType = TradeType.paper})
       : super._();
 
   factory _$TradeRecordImpl.fromJson(Map<String, dynamic> json) =>
@@ -412,35 +493,50 @@ class _$TradeRecordImpl extends _TradeRecord {
   @JsonKey(name: 'broker_order_id')
   final String? brokerOrderId;
   @override
+  @JsonKey()
   @CurrencyPairConverter()
   final CurrencyPair pair;
   @override
+  @JsonKey()
   @StrategyConverter()
   final Strategy strategy;
   @override
+  @JsonKey()
   @DirectionConverter()
   final Direction direction;
   @override
+  @JsonKey()
   @TimeframeConverter()
   final Timeframe timeframe;
   @override
+  @JsonKey()
   @SessionConverter()
   final Session session;
   @override
+  @RegimeConverter()
+  @JsonKey(name: 'regime_at_entry')
+  final Regime regimeAtEntry;
+  @override
+  @JsonKey(name: 'sentiment_at_entry')
+  final double sentimentAtEntry;
+  @override
+  @JsonKey(name: 'confidence_at_entry')
+  final double confidenceAtEntry;
+  @override
   @JsonKey(name: 'entry_price')
-  final double entryPrice;
+  final double? entryPrice;
   @override
   @JsonKey(name: 'entry_time')
-  final DateTime entryTime;
+  final DateTime? entryTime;
   @override
   @JsonKey(name: 'lot_size')
-  final double lotSize;
+  final double? lotSize;
   @override
   @JsonKey(name: 'stop_loss')
-  final double stopLoss;
+  final double? stopLoss;
   @override
   @JsonKey(name: 'take_profit')
-  final double takeProfit;
+  final double? takeProfit;
   @override
   @JsonKey(name: 'exit_price')
   final double? exitPrice;
@@ -452,6 +548,12 @@ class _$TradeRecordImpl extends _TradeRecord {
   @JsonKey(name: 'exit_reason')
   final ExitReason? exitReason;
   @override
+  @JsonKey()
+  final double commission;
+  @override
+  @JsonKey()
+  final double swap;
+  @override
   @JsonKey(name: 'pips_result')
   final double? pipsResult;
   @override
@@ -461,15 +563,17 @@ class _$TradeRecordImpl extends _TradeRecord {
   @JsonKey(name: 'net_profit_loss')
   final double? netProfitLoss;
   @override
-  @JsonKey(name: 'confidence_at_entry')
-  final double confidenceAtEntry;
-  @override
+  @JsonKey()
   @OrderStatusConverter()
   final OrderStatus status;
+  @override
+  @TradeTypeConverter()
+  @JsonKey(name: 'trade_type')
+  final TradeType tradeType;
 
   @override
   String toString() {
-    return 'TradeRecord(tradeUuid: $tradeUuid, brokerOrderId: $brokerOrderId, pair: $pair, strategy: $strategy, direction: $direction, timeframe: $timeframe, session: $session, entryPrice: $entryPrice, entryTime: $entryTime, lotSize: $lotSize, stopLoss: $stopLoss, takeProfit: $takeProfit, exitPrice: $exitPrice, exitTime: $exitTime, exitReason: $exitReason, pipsResult: $pipsResult, profitLoss: $profitLoss, netProfitLoss: $netProfitLoss, confidenceAtEntry: $confidenceAtEntry, status: $status)';
+    return 'TradeRecord(tradeUuid: $tradeUuid, brokerOrderId: $brokerOrderId, pair: $pair, strategy: $strategy, direction: $direction, timeframe: $timeframe, session: $session, regimeAtEntry: $regimeAtEntry, sentimentAtEntry: $sentimentAtEntry, confidenceAtEntry: $confidenceAtEntry, entryPrice: $entryPrice, entryTime: $entryTime, lotSize: $lotSize, stopLoss: $stopLoss, takeProfit: $takeProfit, exitPrice: $exitPrice, exitTime: $exitTime, exitReason: $exitReason, commission: $commission, swap: $swap, pipsResult: $pipsResult, profitLoss: $profitLoss, netProfitLoss: $netProfitLoss, status: $status, tradeType: $tradeType)';
   }
 
   @override
@@ -489,6 +593,12 @@ class _$TradeRecordImpl extends _TradeRecord {
             (identical(other.timeframe, timeframe) ||
                 other.timeframe == timeframe) &&
             (identical(other.session, session) || other.session == session) &&
+            (identical(other.regimeAtEntry, regimeAtEntry) ||
+                other.regimeAtEntry == regimeAtEntry) &&
+            (identical(other.sentimentAtEntry, sentimentAtEntry) ||
+                other.sentimentAtEntry == sentimentAtEntry) &&
+            (identical(other.confidenceAtEntry, confidenceAtEntry) ||
+                other.confidenceAtEntry == confidenceAtEntry) &&
             (identical(other.entryPrice, entryPrice) ||
                 other.entryPrice == entryPrice) &&
             (identical(other.entryTime, entryTime) ||
@@ -504,15 +614,18 @@ class _$TradeRecordImpl extends _TradeRecord {
                 other.exitTime == exitTime) &&
             (identical(other.exitReason, exitReason) ||
                 other.exitReason == exitReason) &&
+            (identical(other.commission, commission) ||
+                other.commission == commission) &&
+            (identical(other.swap, swap) || other.swap == swap) &&
             (identical(other.pipsResult, pipsResult) ||
                 other.pipsResult == pipsResult) &&
             (identical(other.profitLoss, profitLoss) ||
                 other.profitLoss == profitLoss) &&
             (identical(other.netProfitLoss, netProfitLoss) ||
                 other.netProfitLoss == netProfitLoss) &&
-            (identical(other.confidenceAtEntry, confidenceAtEntry) ||
-                other.confidenceAtEntry == confidenceAtEntry) &&
-            (identical(other.status, status) || other.status == status));
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.tradeType, tradeType) ||
+                other.tradeType == tradeType));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -526,6 +639,9 @@ class _$TradeRecordImpl extends _TradeRecord {
         direction,
         timeframe,
         session,
+        regimeAtEntry,
+        sentimentAtEntry,
+        confidenceAtEntry,
         entryPrice,
         entryTime,
         lotSize,
@@ -534,11 +650,13 @@ class _$TradeRecordImpl extends _TradeRecord {
         exitPrice,
         exitTime,
         exitReason,
+        commission,
+        swap,
         pipsResult,
         profitLoss,
         netProfitLoss,
-        confidenceAtEntry,
-        status
+        status,
+        tradeType
       ]);
 
   /// Create a copy of TradeRecord
@@ -559,30 +677,37 @@ class _$TradeRecordImpl extends _TradeRecord {
 
 abstract class _TradeRecord extends TradeRecord {
   const factory _TradeRecord(
-      {@JsonKey(name: 'trade_uuid') required final String tradeUuid,
-      @JsonKey(name: 'broker_order_id') required final String? brokerOrderId,
-      @CurrencyPairConverter() required final CurrencyPair pair,
-      @StrategyConverter() required final Strategy strategy,
-      @DirectionConverter() required final Direction direction,
-      @TimeframeConverter() required final Timeframe timeframe,
-      @SessionConverter() required final Session session,
-      @JsonKey(name: 'entry_price') required final double entryPrice,
-      @JsonKey(name: 'entry_time') required final DateTime entryTime,
-      @JsonKey(name: 'lot_size') required final double lotSize,
-      @JsonKey(name: 'stop_loss') required final double stopLoss,
-      @JsonKey(name: 'take_profit') required final double takeProfit,
+      {@JsonKey(name: 'trade_uuid') final String tradeUuid,
+      @JsonKey(name: 'broker_order_id') final String? brokerOrderId,
+      @CurrencyPairConverter() final CurrencyPair pair,
+      @StrategyConverter() final Strategy strategy,
+      @DirectionConverter() final Direction direction,
+      @TimeframeConverter() final Timeframe timeframe,
+      @SessionConverter() final Session session,
+      @RegimeConverter()
+      @JsonKey(name: 'regime_at_entry')
+      final Regime regimeAtEntry,
+      @JsonKey(name: 'sentiment_at_entry') final double sentimentAtEntry,
+      @JsonKey(name: 'confidence_at_entry') final double confidenceAtEntry,
+      @JsonKey(name: 'entry_price') final double? entryPrice,
+      @JsonKey(name: 'entry_time') final DateTime? entryTime,
+      @JsonKey(name: 'lot_size') final double? lotSize,
+      @JsonKey(name: 'stop_loss') final double? stopLoss,
+      @JsonKey(name: 'take_profit') final double? takeProfit,
       @JsonKey(name: 'exit_price') final double? exitPrice,
       @JsonKey(name: 'exit_time') final DateTime? exitTime,
       @ExitReasonConverter()
       @JsonKey(name: 'exit_reason')
       final ExitReason? exitReason,
+      final double commission,
+      final double swap,
       @JsonKey(name: 'pips_result') final double? pipsResult,
       @JsonKey(name: 'profit_loss') final double? profitLoss,
       @JsonKey(name: 'net_profit_loss') final double? netProfitLoss,
-      @JsonKey(name: 'confidence_at_entry')
-      required final double confidenceAtEntry,
-      @OrderStatusConverter()
-      required final OrderStatus status}) = _$TradeRecordImpl;
+      @OrderStatusConverter() final OrderStatus status,
+      @TradeTypeConverter()
+      @JsonKey(name: 'trade_type')
+      final TradeType tradeType}) = _$TradeRecordImpl;
   const _TradeRecord._() : super._();
 
   factory _TradeRecord.fromJson(Map<String, dynamic> json) =
@@ -610,20 +735,30 @@ abstract class _TradeRecord extends TradeRecord {
   @SessionConverter()
   Session get session;
   @override
+  @RegimeConverter()
+  @JsonKey(name: 'regime_at_entry')
+  Regime get regimeAtEntry;
+  @override
+  @JsonKey(name: 'sentiment_at_entry')
+  double get sentimentAtEntry;
+  @override
+  @JsonKey(name: 'confidence_at_entry')
+  double get confidenceAtEntry;
+  @override
   @JsonKey(name: 'entry_price')
-  double get entryPrice;
+  double? get entryPrice;
   @override
   @JsonKey(name: 'entry_time')
-  DateTime get entryTime;
+  DateTime? get entryTime;
   @override
   @JsonKey(name: 'lot_size')
-  double get lotSize;
+  double? get lotSize;
   @override
   @JsonKey(name: 'stop_loss')
-  double get stopLoss;
+  double? get stopLoss;
   @override
   @JsonKey(name: 'take_profit')
-  double get takeProfit;
+  double? get takeProfit;
   @override
   @JsonKey(name: 'exit_price')
   double? get exitPrice;
@@ -635,6 +770,10 @@ abstract class _TradeRecord extends TradeRecord {
   @JsonKey(name: 'exit_reason')
   ExitReason? get exitReason;
   @override
+  double get commission;
+  @override
+  double get swap;
+  @override
   @JsonKey(name: 'pips_result')
   double? get pipsResult;
   @override
@@ -644,11 +783,12 @@ abstract class _TradeRecord extends TradeRecord {
   @JsonKey(name: 'net_profit_loss')
   double? get netProfitLoss;
   @override
-  @JsonKey(name: 'confidence_at_entry')
-  double get confidenceAtEntry;
-  @override
   @OrderStatusConverter()
   OrderStatus get status;
+  @override
+  @TradeTypeConverter()
+  @JsonKey(name: 'trade_type')
+  TradeType get tradeType;
 
   /// Create a copy of TradeRecord
   /// with the given fields replaced by the non-null parameter values.

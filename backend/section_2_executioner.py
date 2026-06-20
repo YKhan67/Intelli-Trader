@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 
-# Path resolution: Find project root (one level above this script)
+# Path resolution
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
@@ -22,8 +22,12 @@ if __name__ == "__main__":
     print("SECTION 2: THE EXECUTIONER (Live Trading & API)")
     print("="*60)
     
-    # Target path relative to project root
     app_path = "backend.api.main:app"
+    if not os.path.exists("backend/api/main.py"):
+        app_path = "api.main:app"
 
-    logger.info("Launching Executioner on http://0.0.0.0:8000")
-    uvicorn.run(app_path, host="0.0.0.0", port=8000, log_level="info")
+    logger.info("Launching Executioner on http://0.0.0.0:8081")
+    
+    # Uvicorn handles SIGINT (Ctrl+C) naturally. 
+    # Our 'lifespan' in api/main.py will catch the shutdown event.
+    uvicorn.run(app_path, host="0.0.0.0", port=8081, log_level="info")

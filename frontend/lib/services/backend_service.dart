@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:forex_ai_frontend/config/api_endpoints.dart';
 import 'package:forex_ai_frontend/models/models.dart';
 import 'package:forex_ai_frontend/utils/app_exception.dart';
@@ -16,34 +17,14 @@ class BackendService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final config = await _storage.getBackendConfig();
-        if (config['url'] != null) {
-          String url = config['url']!;
-          if (url.endsWith('/')) {
-            url = url.substring(0, url.length - 1);
-          }
-          options.baseUrl = url;
-        }
-        if (config['apiKey'] != null) {
-          options.headers['X-API-Key'] = config['apiKey'];
-        }
-        
-        // Remove leading slash from path if baseUrl is set to avoid double slashes
-        if (options.path.startsWith('/')) {
-          // Dio handles this usually, but let's be explicit
-        }
-        
-        logger.i('API Request: ${options.method} ${options.path}');
+        options.baseUrl = config['url'] ?? 'http://localhost:8081';
+        options.headers['X-API-Key'] = config['apiKey'] ?? 'dev_key';
         return handler.next(options);
-      },
-      onResponse: (response, handler) {
-        logger.i('API Response: ${response.statusCode} ${response.requestOptions.path}');
-        return handler.next(response);
       },
       onError: (DioException e, handler) async {
         if (e.response?.statusCode == 401) {
-          logger.w('Auth failure (401). Clearing key.');
+          logger.w('Auth failure (401).');
           await _storage.clearApiKey();
-          // In a real app, notify state to trigger login flow
         }
         return handler.next(e);
       },
@@ -53,14 +34,24 @@ class BackendService {
   Future<T> _handleRequest<T>(Future<Response> request, T Function(dynamic) parser) async {
     try {
       final response = await request;
-      if (response.data['status'] == 'success') {
-        return parser(response.data['data']);
+      final data = response.data;
+      if (data is Map && data['status'] == 'success') {
+        try {
+          return parser(data['data']);
+        } catch (e, stack) {
+          logger.e('DATA PARSING ERROR: $e');
+          logger.e('RAW DATA: ${jsonEncode(data['data'])}');
+          logger.e('STACKTRACE: $stack');
+          throw AppException(code: 'PARSE_ERROR', message: 'Model parse failed: $e');
+        }
       } else {
-        throw ServerException(message: response.data['message'] ?? 'Unknown server error');
+        logger.e('API ERROR: ${data['message'] ?? 'Unknown error'}');
+        throw ServerException(message: data['message'] ?? 'Unknown server error');
       }
     } on DioException catch (e) {
       throw _wrapDioException(e);
     } catch (e) {
+      logger.e('REQUEST ERROR: $e');
       throw AppException(code: 'UNKNOWN', message: e.toString());
     }
   }
@@ -73,7 +64,7 @@ class BackendService {
       return AuthException(message: 'Unauthorized access');
     }
     if (e.response?.statusCode == 404) {
-      return NetworkException(message: 'Resource not found');
+      return NetworkException(message: 'Resource not found: ${e.requestOptions.path}');
     }
     return ServerException(message: e.message ?? 'Network error');
   }
@@ -100,13 +91,54 @@ class BackendService {
 
   Future<BackendSignal> getSignal(String pair) => _handleRequest(
         _dio.get('${ApiEndpoints.signal}/$pair'),
-        (data) => BackendSignal.fromJson(data as Map<String, dynamic>),
+        (data) => BackendSignal.fromJson(_flattenSignal(data as Map<String, dynamic>)),
       );
 
   Future<List<BackendSignal>> getAllSignals({String timeframe = 'H1'}) => _handleRequest(
         _dio.get(ApiEndpoints.allSignals, queryParameters: {'timeframe': timeframe}),
-        (data) => (data as List?)?.map((e) => BackendSignal.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => BackendSignal.fromJson(_flattenSignal(e as Map<String, dynamic>))).toList() 
+            : [],
       );
+
+  Map<String, dynamic> _flattenSignal(Map<String, dynamic> json) {
+    final Map<String, dynamic> flat = Map.from(json);
+    
+    // Trade Decision fields
+    if (json.containsKey('trade_decision')) {
+      flat.addAll(json['trade_decision'] as Map<String, dynamic>);
+    } else if (json.containsKey('decision')) {
+      flat.addAll(json['decision'] as Map<String, dynamic>);
+    }
+
+    // Regime Result fields
+    if (json.containsKey('regime_result')) {
+      final rr = json['regime_result'] as Map<String, dynamic>;
+      flat['regime_confidence'] = rr['confidence'] ?? 0.0;
+      flat['bars_in_regime'] = rr['bars_in_regime'] ?? 0;
+      flat['h4_bias'] = rr['h4_bias'];
+      flat['h1_regime'] = rr['h1_regime'];
+      if (!flat.containsKey('regime')) flat['regime'] = rr['regime'];
+    } else if (json.containsKey('regime')) {
+      final rData = json['regime'];
+      if (rData is Map<String, dynamic>) {
+        flat['regime_confidence'] = rData['confidence'] ?? 0.0;
+        flat['bars_in_regime'] = rData['bars_in_regime'] ?? 0;
+        flat['h4_bias'] = rData['h4_bias'];
+        flat['h1_regime'] = rData['h1_regime'];
+      }
+    }
+
+    // Scores
+    if (json.containsKey('sentiment_result')) {
+      flat['sentiment_score'] = json['sentiment_result']['pair_score'] ?? 0.0;
+    }
+    if (json.containsKey('risk_params')) {
+      flat['risk_score'] = json['risk_params']['risk_score'] ?? 0.0;
+    }
+
+    return flat;
+  }
 
   Future<Map<String, dynamic>> getMarket(String pair) => _handleRequest(
         _dio.get('${ApiEndpoints.market}/$pair'),
@@ -115,7 +147,9 @@ class BackendService {
 
   Future<List<OpenTrade>> getOpenTrades() => _handleRequest(
         _dio.get(ApiEndpoints.openTrades),
-        (data) => (data as List?)?.map((e) => OpenTrade.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => OpenTrade.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
       );
 
   Future<List<TradeRecord>> getTradeHistory({
@@ -123,14 +157,20 @@ class BackendService {
     DateTime? dateTo,
     String? pair,
     String? strategy,
+    int page = 1,
+    int size = 50,
   }) => _handleRequest(
         _dio.get(ApiEndpoints.tradeHistory, queryParameters: {
           if (dateFrom != null) 'date_from': dateFrom.toIso8601String(),
           if (dateTo != null) 'date_to': dateTo.toIso8601String(),
           if (pair != null) 'pair': pair,
           if (strategy != null) 'strategy': strategy,
+          'page': page,
+          'size': size,
         }),
-        (data) => (data as List?)?.map((e) => TradeRecord.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => TradeRecord.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
       );
 
   Future<PerformanceMetrics> getPerformance() => _handleRequest(
@@ -140,7 +180,31 @@ class BackendService {
 
   Future<List<NewsItem>> getNews(String pair) => _handleRequest(
         _dio.get('${ApiEndpoints.news}/$pair'),
-        (data) => (data as List?)?.map((e) => NewsItem.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => NewsItem.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
+      );
+
+  Future<List<NewsItem>> getAllNews({int limit = 50}) => _handleRequest(
+        _dio.get(ApiEndpoints.allNews, queryParameters: {'limit': limit}),
+        (data) => (data is List) 
+            ? data.map((e) => NewsItem.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
+      );
+
+  Future<SentimentOverview> getSentimentOverview() => _handleRequest(
+        _dio.get(ApiEndpoints.sentimentOverview),
+        (data) => SentimentOverview.fromJson(data as Map<String, dynamic>),
+      );
+
+  Future<Map<String, dynamic>> getAllCOT() => _handleRequest(
+        _dio.get('/market/cot/all'),
+        (data) => data as Map<String, dynamic>,
+      );
+
+  Future<List<Map<String, dynamic>>> getSentimentHistory(String currency) => _handleRequest(
+        _dio.get('/market/sentiment/history/$currency'),
+        (data) => (data as List).map((e) => e as Map<String, dynamic>).toList(),
       );
 
   Future<List<OHLCVBar>> getOHLCV(String pair, {String timeframe = 'H1', int limit = 100}) => _handleRequest(
@@ -148,12 +212,14 @@ class BackendService {
           'timeframe': timeframe,
           'limit': limit,
         }),
-        (data) => (data as List?)?.map((e) => OHLCVBar.fromJson({
-          ...e as Map<String, dynamic>,
-          'pair': pair,
-          'timeframe': timeframe.toLowerCase(),
-          'spread_pips': 0.0, // Default for historical
-        })).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => OHLCVBar.fromJson({
+                ...e as Map<String, dynamic>,
+                'pair': pair,
+                'timeframe': timeframe.toLowerCase(),
+                'spread_pips': 0.0,
+              })).toList() 
+            : [],
       );
 
   Future<List<IndicatorSet>> getIndicators(String pair, {String timeframe = 'H1', int limit = 100}) => _handleRequest(
@@ -161,19 +227,25 @@ class BackendService {
           'timeframe': timeframe,
           'limit': limit,
         }),
-        (data) => (data as List?)?.map((e) => IndicatorSet.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => IndicatorSet.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
       );
 
   Future<List<SMCZone>> getSMCZones(String pair, {String timeframe = 'H1'}) => _handleRequest(
         _dio.get('${ApiEndpoints.market}/smc/$pair', queryParameters: {
           'timeframe': timeframe,
         }),
-        (data) => (data as List?)?.map((e) => SMCZone.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => SMCZone.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
       );
 
   Future<List<CalendarEvent>> getCalendar() => _handleRequest(
         _dio.get(ApiEndpoints.calendar),
-        (data) => (data as List?)?.map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+        (data) => (data is List) 
+            ? data.map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>)).toList() 
+            : [],
       );
 
   Future<RiskParams> getRisk() => _handleRequest(
@@ -181,10 +253,12 @@ class BackendService {
         (data) => RiskParams.fromJson(data as Map<String, dynamic>),
       );
 
-  Future<void> postSettings(TradingMode mode, List<CurrencyPair> pairs) => _handleRequest(
+  Future<void> postSettings(TradingMode mode, List<CurrencyPair> pairs, Map<String, double> risk) => _handleRequest(
         _dio.post(ApiEndpoints.settings, data: {
           'trading_mode': mode.name,
           'active_pairs': pairs.map((e) => e.name).toList(),
+          'min_rr_ratio': risk['min_rr_ratio'],
+          'max_risk_per_trade': risk['max_risk_per_trade'],
         }),
         (data) => null,
       );

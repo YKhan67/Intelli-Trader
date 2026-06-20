@@ -20,6 +20,12 @@ class StorageService {
   Future<Map<String, String?>> getBackendConfig() async {
     final url = await _secureStorage.read(key: 'backend_url');
     final apiKey = await _secureStorage.read(key: 'backend_api_key');
+    
+    // RESCUE OVERRIDE: Force Port 8081 if settings are missing or old
+    if (url == null || url.contains(":8000")) {
+      return {'url': 'http://localhost:8081', 'apiKey': 'dev_key'};
+    }
+    
     return {'url': url, 'apiKey': apiKey};
   }
 
@@ -33,8 +39,16 @@ class StorageService {
     final typeStr = await _secureStorage.read(key: 'broker_type');
     final credsStr = await _secureStorage.read(key: 'broker_credentials');
     
+    // RESCUE OVERRIDE: Force MT5 on 8765 if missing
+    if (typeStr == null) {
+      return {
+        'type': BrokerType.mt5,
+        'credentials': {'bridge_url': 'ws://localhost:8765'},
+      };
+    }
+
     return {
-      'type': typeStr != null ? BrokerType.values.byName(typeStr) : null,
+      'type': BrokerType.values.byName(typeStr),
       'credentials': credsStr != null ? jsonDecode(credsStr) : <String, String>{},
     };
   }

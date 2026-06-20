@@ -22,7 +22,6 @@ class _ChartTabState extends ConsumerState<ChartTab> {
     final ohlcvAsync = ref.watch(ohlcvProvider(widget.pair, tf: _selectedTf));
     final signalsAsync = ref.watch(allSignalsProvider);
     final smcAsync = ref.watch(smcZonesProvider(widget.pair, tf: _selectedTf));
-    final indicatorAsync = ref.watch(indicatorsProvider(widget.pair, tf: _selectedTf));
     
     return Column(
       children: [
@@ -30,43 +29,41 @@ class _ChartTabState extends ConsumerState<ChartTab> {
         Expanded(
           child: ohlcvAsync.when(
             data: (bars) {
-              if (bars.isEmpty) return const Center(child: Text("No data available"));
+              if (bars.length < 5) {
+                return const Center(child: Text("Insufficient historical data for chart."));
+              }
               
-              final candles = bars
-                  .where((b) => b.timestamp != null)
-                  .map((b) => Candle(
-                    date: b.timestamp!,
-                    high: b.high,
-                    low: b.low,
-                    open: b.open,
-                    close: b.close,
-                    volume: b.volume,
-                  )).toList();
+              try {
+                final candles = bars
+                    .where((b) => b.timestamp != null)
+                    .map((b) => Candle(
+                      date: b.timestamp!,
+                      high: b.high,
+                      low: b.low,
+                      open: b.open,
+                      close: b.close,
+                      volume: b.volume,
+                    )).toList();
 
-              // Get current signal for horizontal lines
-              final signal = signalsAsync.asData?.value[widget.pair];
-              
-              return smcAsync.maybeWhen(
-                data: (zones) => Stack(
+                if (candles.isEmpty) return const Center(child: Text("Data rendering error."));
+
+                final signal = signalsAsync.value?[widget.pair];
+                final List<SMCZone> zones = smcAsync.value ?? [];
+                
+                return Stack(
                   children: [
                     Candlesticks(
                       candles: candles,
                     ),
                     _buildOverlayDetails(signal, zones),
                   ],
-                ),
-                orElse: () => Stack(
-                  children: [
-                    Candlesticks(
-                      candles: candles,
-                    ),
-                    _buildOverlayDetails(signal, []),
-                  ],
-                ),
-              );
+                );
+              } catch (e) {
+                return Center(child: Text("Chart Initialization Error: $e"));
+              }
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text("Error: $e")),
+            error: (e, _) => Center(child: Text("Data Load Error: $e")),
           ),
         ),
       ],
@@ -74,13 +71,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
   }
 
   Widget _buildTimeframeSelector() {
-    final tfs = [
-      Timeframe.m5,
-      Timeframe.m15,
-      Timeframe.m30,
-      Timeframe.h1,
-      Timeframe.h4
-    ];
+    final tfs = [Timeframe.m5, Timeframe.m15, Timeframe.m30, Timeframe.h1, Timeframe.h4];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
@@ -93,6 +84,12 @@ class _ChartTabState extends ConsumerState<ChartTab> {
             onSelected: (val) {
               if (val) setState(() => _selectedTf = tf);
             },
+            selectedColor: AppColors.accentBlue.withOpacity(0.2),
+            labelStyle: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? AppColors.accentBlue : AppColors.textMuted,
+            ),
           );
         }).toList(),
       ),
@@ -108,23 +105,30 @@ class _ChartTabState extends ConsumerState<ChartTab> {
         children: [
           if (signal != null && signal.action != SignalAction.hold)
             Container(
-              padding: const EdgeInsets.all(4),
-              color: Colors.black54,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.white24),
+              ),
               child: Text(
-                "TP: ${signal.takeProfit.toStringAsFixed(5)} | SL: ${signal.stopLoss.toStringAsFixed(5)}",
-                style: const TextStyle(fontSize: 10, color: Colors.white),
+                "SIGNAL: ${signal.action.name.toUpperCase()} @ ${signal.entryPrice?.toStringAsFixed(5)}",
+                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           const SizedBox(height: 4),
-          if (zones.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(4),
-              color: Colors.black54,
-              child: Text(
-                "SMC: ${zones.length} Active Zones",
-                style: const TextStyle(fontSize: 10, color: Colors.white),
-              ),
+          ...zones.take(3).map((z) => Container(
+            margin: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: z.zoneType.contains("OB") ? Colors.purple.withOpacity(0.6) : Colors.amber.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(2),
             ),
+            child: Text(
+              "${z.zoneType}: ${z.priceLow.toStringAsFixed(5)}",
+              style: const TextStyle(fontSize: 8, color: Colors.white),
+            ),
+          )),
         ],
       ),
     );

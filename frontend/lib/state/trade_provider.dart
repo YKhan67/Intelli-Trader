@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'services_provider.dart';
 import '../models/models.dart';
-
-import 'package:forex_ai_frontend/state/connection_provider.dart';
-import 'package:forex_ai_frontend/utils/logger.dart';
+import 'connection_provider.dart';
+import '../utils/logger.dart';
 
 part 'trade_provider.g.dart';
 
@@ -30,28 +29,49 @@ Stream<List<OpenTrade>> openTrades(OpenTradesRef ref) async* {
   }
 }
 
-@riverpod
-Future<List<TradeRecord>> tradeHistory(TradeHistoryRef ref, {
-  DateTime? dateFrom,
-  DateTime? dateTo,
-  String? pair,
-  String? strategy,
-}) async {
-  final api = ref.watch(backendServiceProvider);
-  return api.getTradeHistory(
-    dateFrom: dateFrom,
-    dateTo: dateTo,
-    pair: pair,
-    strategy: strategy,
-  );
-}
+@Riverpod(keepAlive: true)
+class TradeHistoryNotifier extends _$TradeHistoryNotifier {
+  int _currentPage = 1;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
 
-@riverpod
-class RefreshTrades extends _$RefreshTrades {
   @override
-  void build() {}
-
-  void refresh() {
-    ref.invalidate(openTradesProvider);
+  Future<List<TradeRecord>> build() async {
+    _currentPage = 1;
+    _hasMore = true;
+    return _fetchTrades();
   }
+
+  Future<List<TradeRecord>> _fetchTrades() async {
+    final api = ref.read(backendServiceProvider);
+    return await api.getTradeHistory(page: _currentPage, size: 50);
+  }
+
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    
+    _isLoadingMore = true;
+    _currentPage++;
+    
+    try {
+      final newTrades = await _fetchTrades();
+      if (newTrades.isEmpty) {
+        _hasMore = false;
+      } else {
+        final currentTrades = state.value ?? [];
+        state = AsyncValue.data([...currentTrades, ...newTrades]);
+      }
+    } catch (e) {
+      _currentPage--;
+      logger.e("Error loading more trades: $e");
+    } finally {
+      _isLoadingMore = false;
+    }
+  }
+
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
 }
+
+// Keep the old provider as a compatibility alias if needed, or update consumers
+final tradeHistoryProvider = Provider((ref) => ref.watch(tradeHistoryNotifierProvider));

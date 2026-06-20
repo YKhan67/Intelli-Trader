@@ -52,5 +52,21 @@ final activePairsStateProvider =
 );
 
 typedef _$ActivePairsState = Notifier<List<CurrencyPair>>;
+String _$riskSettingsStateHash() => r'f0ad9752ec275ae1e00a7b8e4889075c37e0f6e3';
+
+/// See also [RiskSettingsState].
+@ProviderFor(RiskSettingsState)
+final riskSettingsStateProvider =
+    NotifierProvider<RiskSettingsState, Map<String, double>>.internal(
+  RiskSettingsState.new,
+  name: r'riskSettingsStateProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$riskSettingsStateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$RiskSettingsState = Notifier<Map<String, double>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/backend_service.dart';
-import '../services/websocket_service.dart';
-import '../services/storage_service.dart';
-import '../services/notification_service.dart';
-import '../services/broker_service.dart';
+import 'package:forex_ai_frontend/services/backend_service.dart';
+import 'package:forex_ai_frontend/services/websocket_service.dart';
+import 'package:forex_ai_frontend/services/storage_service.dart';
+import 'package:forex_ai_frontend/services/notification_service.dart';
+import 'package:forex_ai_frontend/services/broker_service.dart';
+import 'package:forex_ai_frontend/services/order_execution_service.dart';
+export 'package:forex_ai_frontend/services/order_execution_service.dart' show executionServiceProvider;
 
 final storageServiceProvider = Provider((ref) => StorageService());
 

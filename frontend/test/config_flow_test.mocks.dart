@@ -48,8 +48,9 @@ class _FakePerformanceMetrics_1 extends _i1.SmartFake
         );
 }
 
-class _FakeRiskParams_2 extends _i1.SmartFake implements _i2.RiskParams {
-  _FakeRiskParams_2(
+class _FakeSentimentOverview_2 extends _i1.SmartFake
+    implements _i2.SentimentOverview {
+  _FakeSentimentOverview_2(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -58,8 +59,18 @@ class _FakeRiskParams_2 extends _i1.SmartFake implements _i2.RiskParams {
         );
 }
 
-class _FakeAccountInfo_3 extends _i1.SmartFake implements _i2.AccountInfo {
-  _FakeAccountInfo_3(
+class _FakeRiskParams_3 extends _i1.SmartFake implements _i2.RiskParams {
+  _FakeRiskParams_3(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeAccountInfo_4 extends _i1.SmartFake implements _i2.AccountInfo {
+  _FakeAccountInfo_4(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -309,6 +320,8 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
     DateTime? dateTo,
     String? pair,
     String? strategy,
+    int? page = 1,
+    int? size = 50,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -319,6 +332,8 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
             #dateTo: dateTo,
             #pair: pair,
             #strategy: strategy,
+            #page: page,
+            #size: size,
           },
         ),
         returnValue:
@@ -349,6 +364,56 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
         ),
         returnValue: _i4.Future<List<_i2.NewsItem>>.value(<_i2.NewsItem>[]),
       ) as _i4.Future<List<_i2.NewsItem>>);
+
+  @override
+  _i4.Future<List<_i2.NewsItem>> getAllNews({int? limit = 50}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAllNews,
+          [],
+          {#limit: limit},
+        ),
+        returnValue: _i4.Future<List<_i2.NewsItem>>.value(<_i2.NewsItem>[]),
+      ) as _i4.Future<List<_i2.NewsItem>>);
+
+  @override
+  _i4.Future<_i2.SentimentOverview> getSentimentOverview() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getSentimentOverview,
+          [],
+        ),
+        returnValue:
+            _i4.Future<_i2.SentimentOverview>.value(_FakeSentimentOverview_2(
+          this,
+          Invocation.method(
+            #getSentimentOverview,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.SentimentOverview>);
+
+  @override
+  _i4.Future<Map<String, dynamic>> getAllCOT() => (super.noSuchMethod(
+        Invocation.method(
+          #getAllCOT,
+          [],
+        ),
+        returnValue:
+            _i4.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i4.Future<Map<String, dynamic>>);
+
+  @override
+  _i4.Future<List<Map<String, dynamic>>> getSentimentHistory(
+          String? currency) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getSentimentHistory,
+          [currency],
+        ),
+        returnValue: _i4.Future<List<Map<String, dynamic>>>.value(
+            <Map<String, dynamic>>[]),
+      ) as _i4.Future<List<Map<String, dynamic>>>);
 
   @override
   _i4.Future<List<_i2.OHLCVBar>> getOHLCV(
@@ -417,7 +482,7 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
           #getRisk,
           [],
         ),
-        returnValue: _i4.Future<_i2.RiskParams>.value(_FakeRiskParams_2(
+        returnValue: _i4.Future<_i2.RiskParams>.value(_FakeRiskParams_3(
           this,
           Invocation.method(
             #getRisk,
@@ -430,6 +495,7 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
   _i4.Future<void> postSettings(
     _i5.TradingMode? mode,
     List<_i5.CurrencyPair>? pairs,
+    Map<String, double>? risk,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -437,6 +503,7 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
           [
             mode,
             pairs,
+            risk,
           ],
         ),
         returnValue: _i4.Future<void>.value(),
@@ -503,7 +570,7 @@ class MockBrokerInterface extends _i1.Mock implements _i7.BrokerInterface {
           #getAccountInfo,
           [],
         ),
-        returnValue: _i4.Future<_i2.AccountInfo>.value(_FakeAccountInfo_3(
+        returnValue: _i4.Future<_i2.AccountInfo>.value(_FakeAccountInfo_4(
           this,
           Invocation.method(
             #getAccountInfo,

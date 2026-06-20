@@ -8,9 +8,12 @@ part of 'indicator_set.dart';
 
 _$IndicatorSetImpl _$$IndicatorSetImplFromJson(Map<String, dynamic> json) =>
     _$IndicatorSetImpl(
-      pair: const CurrencyPairConverter().fromJson(json['pair'] as String),
-      timeframe:
-          const TimeframeConverter().fromJson(json['timeframe'] as String),
+      pair: json['pair'] == null
+          ? CurrencyPair.unknown
+          : const CurrencyPairConverter().fromJson(json['pair']),
+      timeframe: json['timeframe'] == null
+          ? Timeframe.h1
+          : const TimeframeConverter().fromJson(json['timeframe']),
       timestamp: json['timestamp'] == null
           ? null
           : DateTime.parse(json['timestamp'] as String),

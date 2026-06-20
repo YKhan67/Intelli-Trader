@@ -48,3 +48,19 @@ class ActivePairsState extends _$ActivePairsState {
     state = pairs;
   }
 }
+
+@Riverpod(keepAlive: true)
+class RiskSettingsState extends _$RiskSettingsState {
+  @override
+  Map<String, double> build() {
+    // Default values
+    return {
+      'min_rr_ratio': 1.5,
+      'max_risk_per_trade': 0.01,
+    };
+  }
+
+  void update(String key, double value) {
+    state = {...state, key: value};
+  }
+}

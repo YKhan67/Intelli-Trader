@@ -8,9 +8,8 @@ part of 'ohlcv_bar.dart';
 
 _$OHLCVBarImpl _$$OHLCVBarImplFromJson(Map<String, dynamic> json) =>
     _$OHLCVBarImpl(
-      pair: const CurrencyPairConverter().fromJson(json['pair'] as String),
-      timeframe:
-          const TimeframeConverter().fromJson(json['timeframe'] as String),
+      pair: const CurrencyPairConverter().fromJson(json['pair']),
+      timeframe: const TimeframeConverter().fromJson(json['timeframe']),
       timestamp: json['timestamp'] == null
           ? null
           : DateTime.parse(json['timestamp'] as String),

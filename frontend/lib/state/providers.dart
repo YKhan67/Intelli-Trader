@@ -9,3 +9,5 @@ export 'news_provider.dart';
 export 'risk_provider.dart';
 export 'alert_provider.dart';
 export 'account_provider.dart';
+export 'sentiment_provider.dart';
+export 'trade_history_filter_provider.dart';

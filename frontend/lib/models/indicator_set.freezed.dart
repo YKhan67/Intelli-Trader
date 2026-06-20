@@ -219,8 +219,8 @@ class __$$IndicatorSetImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$IndicatorSetImpl implements _IndicatorSet {
   const _$IndicatorSetImpl(
-      {@CurrencyPairConverter() required this.pair,
-      @TimeframeConverter() required this.timeframe,
+      {@CurrencyPairConverter() this.pair = CurrencyPair.unknown,
+      @TimeframeConverter() this.timeframe = Timeframe.h1,
       this.timestamp,
       @JsonKey(name: 'ema_50') this.ema50,
       @JsonKey(name: 'ema_200') this.ema200,
@@ -233,9 +233,11 @@ class _$IndicatorSetImpl implements _IndicatorSet {
       _$$IndicatorSetImplFromJson(json);
 
   @override
+  @JsonKey()
   @CurrencyPairConverter()
   final CurrencyPair pair;
   @override
+  @JsonKey()
   @TimeframeConverter()
   final Timeframe timeframe;
   @override
@@ -307,8 +309,8 @@ class _$IndicatorSetImpl implements _IndicatorSet {
 
 abstract class _IndicatorSet implements IndicatorSet {
   const factory _IndicatorSet(
-          {@CurrencyPairConverter() required final CurrencyPair pair,
-          @TimeframeConverter() required final Timeframe timeframe,
+          {@CurrencyPairConverter() final CurrencyPair pair,
+          @TimeframeConverter() final Timeframe timeframe,
           final DateTime? timestamp,
           @JsonKey(name: 'ema_50') final double? ema50,
           @JsonKey(name: 'ema_200') final double? ema200,

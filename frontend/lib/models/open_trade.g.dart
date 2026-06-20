@@ -9,14 +9,13 @@ part of 'open_trade.dart';
 _$OpenTradeImpl _$$OpenTradeImplFromJson(Map<String, dynamic> json) =>
     _$OpenTradeImpl(
       brokerTicketId: json['broker_ticket_id'] as String,
-      pair: const CurrencyPairConverter().fromJson(json['pair'] as String),
-      direction:
-          const DirectionConverter().fromJson(json['direction'] as String),
+      pair: const CurrencyPairConverter().fromJson(json['pair']),
+      direction: const DirectionConverter().fromJson(json['direction']),
       entryPrice: (json['entry_price'] as num).toDouble(),
       currentPrice: (json['current_price'] as num).toDouble(),
       lotSize: (json['lot_size'] as num).toDouble(),
-      stopLoss: (json['stop_loss'] as num).toDouble(),
-      takeProfit: (json['take_profit'] as num).toDouble(),
+      stopLoss: (json['stop_loss'] as num?)?.toDouble(),
+      takeProfit: (json['take_profit'] as num?)?.toDouble(),
       openTime: DateTime.parse(json['open_time'] as String),
     );
 

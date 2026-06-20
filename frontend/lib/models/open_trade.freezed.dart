@@ -33,9 +33,9 @@ mixin _$OpenTrade {
   @JsonKey(name: 'lot_size')
   double get lotSize => throw _privateConstructorUsedError;
   @JsonKey(name: 'stop_loss')
-  double get stopLoss => throw _privateConstructorUsedError;
+  double? get stopLoss => throw _privateConstructorUsedError;
   @JsonKey(name: 'take_profit')
-  double get takeProfit => throw _privateConstructorUsedError;
+  double? get takeProfit => throw _privateConstructorUsedError;
   @JsonKey(name: 'open_time')
   DateTime get openTime => throw _privateConstructorUsedError;
 
@@ -61,8 +61,8 @@ abstract class $OpenTradeCopyWith<$Res> {
       @JsonKey(name: 'entry_price') double entryPrice,
       @JsonKey(name: 'current_price') double currentPrice,
       @JsonKey(name: 'lot_size') double lotSize,
-      @JsonKey(name: 'stop_loss') double stopLoss,
-      @JsonKey(name: 'take_profit') double takeProfit,
+      @JsonKey(name: 'stop_loss') double? stopLoss,
+      @JsonKey(name: 'take_profit') double? takeProfit,
       @JsonKey(name: 'open_time') DateTime openTime});
 }
 
@@ -87,8 +87,8 @@ class _$OpenTradeCopyWithImpl<$Res, $Val extends OpenTrade>
     Object? entryPrice = null,
     Object? currentPrice = null,
     Object? lotSize = null,
-    Object? stopLoss = null,
-    Object? takeProfit = null,
+    Object? stopLoss = freezed,
+    Object? takeProfit = freezed,
     Object? openTime = null,
   }) {
     return _then(_value.copyWith(
@@ -116,14 +116,14 @@ class _$OpenTradeCopyWithImpl<$Res, $Val extends OpenTrade>
           ? _value.lotSize
           : lotSize // ignore: cast_nullable_to_non_nullable
               as double,
-      stopLoss: null == stopLoss
+      stopLoss: freezed == stopLoss
           ? _value.stopLoss
           : stopLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      takeProfit: null == takeProfit
+              as double?,
+      takeProfit: freezed == takeProfit
           ? _value.takeProfit
           : takeProfit // ignore: cast_nullable_to_non_nullable
-              as double,
+              as double?,
       openTime: null == openTime
           ? _value.openTime
           : openTime // ignore: cast_nullable_to_non_nullable
@@ -147,8 +147,8 @@ abstract class _$$OpenTradeImplCopyWith<$Res>
       @JsonKey(name: 'entry_price') double entryPrice,
       @JsonKey(name: 'current_price') double currentPrice,
       @JsonKey(name: 'lot_size') double lotSize,
-      @JsonKey(name: 'stop_loss') double stopLoss,
-      @JsonKey(name: 'take_profit') double takeProfit,
+      @JsonKey(name: 'stop_loss') double? stopLoss,
+      @JsonKey(name: 'take_profit') double? takeProfit,
       @JsonKey(name: 'open_time') DateTime openTime});
 }
 
@@ -171,8 +171,8 @@ class __$$OpenTradeImplCopyWithImpl<$Res>
     Object? entryPrice = null,
     Object? currentPrice = null,
     Object? lotSize = null,
-    Object? stopLoss = null,
-    Object? takeProfit = null,
+    Object? stopLoss = freezed,
+    Object? takeProfit = freezed,
     Object? openTime = null,
   }) {
     return _then(_$OpenTradeImpl(
@@ -200,14 +200,14 @@ class __$$OpenTradeImplCopyWithImpl<$Res>
           ? _value.lotSize
           : lotSize // ignore: cast_nullable_to_non_nullable
               as double,
-      stopLoss: null == stopLoss
+      stopLoss: freezed == stopLoss
           ? _value.stopLoss
           : stopLoss // ignore: cast_nullable_to_non_nullable
-              as double,
-      takeProfit: null == takeProfit
+              as double?,
+      takeProfit: freezed == takeProfit
           ? _value.takeProfit
           : takeProfit // ignore: cast_nullable_to_non_nullable
-              as double,
+              as double?,
       openTime: null == openTime
           ? _value.openTime
           : openTime // ignore: cast_nullable_to_non_nullable
@@ -226,8 +226,8 @@ class _$OpenTradeImpl extends _OpenTrade {
       @JsonKey(name: 'entry_price') required this.entryPrice,
       @JsonKey(name: 'current_price') required this.currentPrice,
       @JsonKey(name: 'lot_size') required this.lotSize,
-      @JsonKey(name: 'stop_loss') required this.stopLoss,
-      @JsonKey(name: 'take_profit') required this.takeProfit,
+      @JsonKey(name: 'stop_loss') this.stopLoss,
+      @JsonKey(name: 'take_profit') this.takeProfit,
       @JsonKey(name: 'open_time') required this.openTime})
       : super._();
 
@@ -254,10 +254,10 @@ class _$OpenTradeImpl extends _OpenTrade {
   final double lotSize;
   @override
   @JsonKey(name: 'stop_loss')
-  final double stopLoss;
+  final double? stopLoss;
   @override
   @JsonKey(name: 'take_profit')
-  final double takeProfit;
+  final double? takeProfit;
   @override
   @JsonKey(name: 'open_time')
   final DateTime openTime;
@@ -319,8 +319,8 @@ abstract class _OpenTrade extends OpenTrade {
       @JsonKey(name: 'entry_price') required final double entryPrice,
       @JsonKey(name: 'current_price') required final double currentPrice,
       @JsonKey(name: 'lot_size') required final double lotSize,
-      @JsonKey(name: 'stop_loss') required final double stopLoss,
-      @JsonKey(name: 'take_profit') required final double takeProfit,
+      @JsonKey(name: 'stop_loss') final double? stopLoss,
+      @JsonKey(name: 'take_profit') final double? takeProfit,
       @JsonKey(name: 'open_time')
       required final DateTime openTime}) = _$OpenTradeImpl;
   const _OpenTrade._() : super._();
@@ -348,10 +348,10 @@ abstract class _OpenTrade extends OpenTrade {
   double get lotSize;
   @override
   @JsonKey(name: 'stop_loss')
-  double get stopLoss;
+  double? get stopLoss;
   @override
   @JsonKey(name: 'take_profit')
-  double get takeProfit;
+  double? get takeProfit;
   @override
   @JsonKey(name: 'open_time')
   DateTime get openTime;

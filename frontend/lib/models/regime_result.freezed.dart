@@ -20,7 +20,7 @@ RegimeResult _$RegimeResultFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$RegimeResult {
-  DateTime get timestamp => throw _privateConstructorUsedError;
+  DateTime? get timestamp => throw _privateConstructorUsedError;
   @CurrencyPairConverter()
   CurrencyPair get pair => throw _privateConstructorUsedError;
   @TimeframeConverter()
@@ -58,7 +58,7 @@ abstract class $RegimeResultCopyWith<$Res> {
       _$RegimeResultCopyWithImpl<$Res, RegimeResult>;
   @useResult
   $Res call(
-      {DateTime timestamp,
+      {DateTime? timestamp,
       @CurrencyPairConverter() CurrencyPair pair,
       @TimeframeConverter() Timeframe timeframe,
       @RegimeConverter() Regime regime,
@@ -85,7 +85,7 @@ class _$RegimeResultCopyWithImpl<$Res, $Val extends RegimeResult>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? pair = null,
     Object? timeframe = null,
     Object? regime = null,
@@ -97,10 +97,10 @@ class _$RegimeResultCopyWithImpl<$Res, $Val extends RegimeResult>
     Object? durationWarning = null,
   }) {
     return _then(_value.copyWith(
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       pair: null == pair
           ? _value.pair
           : pair // ignore: cast_nullable_to_non_nullable
@@ -150,7 +150,7 @@ abstract class _$$RegimeResultImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {DateTime timestamp,
+      {DateTime? timestamp,
       @CurrencyPairConverter() CurrencyPair pair,
       @TimeframeConverter() Timeframe timeframe,
       @RegimeConverter() Regime regime,
@@ -175,7 +175,7 @@ class __$$RegimeResultImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? timestamp = null,
+    Object? timestamp = freezed,
     Object? pair = null,
     Object? timeframe = null,
     Object? regime = null,
@@ -187,10 +187,10 @@ class __$$RegimeResultImplCopyWithImpl<$Res>
     Object? durationWarning = null,
   }) {
     return _then(_$RegimeResultImpl(
-      timestamp: null == timestamp
+      timestamp: freezed == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       pair: null == pair
           ? _value.pair
           : pair // ignore: cast_nullable_to_non_nullable
@@ -235,32 +235,40 @@ class __$$RegimeResultImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$RegimeResultImpl implements _RegimeResult {
   const _$RegimeResultImpl(
-      {required this.timestamp,
-      @CurrencyPairConverter() required this.pair,
-      @TimeframeConverter() required this.timeframe,
-      @RegimeConverter() required this.regime,
-      required this.confidence,
-      @JsonKey(name: 'h4_bias') @DirectionConverter() required this.h4Bias,
-      @JsonKey(name: 'h1_regime') @RegimeConverter() required this.h1Regime,
-      @JsonKey(name: 'bars_in_regime') required this.barsInRegime,
-      @JsonKey(name: 'regime_changed') required this.regimeChanged,
-      @JsonKey(name: 'duration_warning') required this.durationWarning});
+      {this.timestamp,
+      @CurrencyPairConverter() this.pair = CurrencyPair.unknown,
+      @TimeframeConverter() this.timeframe = Timeframe.h1,
+      @RegimeConverter() this.regime = Regime.unknown,
+      this.confidence = 0.0,
+      @JsonKey(name: 'h4_bias')
+      @DirectionConverter()
+      this.h4Bias = Direction.neutral,
+      @JsonKey(name: 'h1_regime')
+      @RegimeConverter()
+      this.h1Regime = Regime.unknown,
+      @JsonKey(name: 'bars_in_regime') this.barsInRegime = 0,
+      @JsonKey(name: 'regime_changed') this.regimeChanged = false,
+      @JsonKey(name: 'duration_warning') this.durationWarning = false});
 
   factory _$RegimeResultImpl.fromJson(Map<String, dynamic> json) =>
       _$$RegimeResultImplFromJson(json);
 
   @override
-  final DateTime timestamp;
+  final DateTime? timestamp;
   @override
+  @JsonKey()
   @CurrencyPairConverter()
   final CurrencyPair pair;
   @override
+  @JsonKey()
   @TimeframeConverter()
   final Timeframe timeframe;
   @override
+  @JsonKey()
   @RegimeConverter()
   final Regime regime;
   @override
+  @JsonKey()
   final double confidence;
   @override
   @JsonKey(name: 'h4_bias')
@@ -342,27 +350,23 @@ class _$RegimeResultImpl implements _RegimeResult {
 
 abstract class _RegimeResult implements RegimeResult {
   const factory _RegimeResult(
-      {required final DateTime timestamp,
-      @CurrencyPairConverter() required final CurrencyPair pair,
-      @TimeframeConverter() required final Timeframe timeframe,
-      @RegimeConverter() required final Regime regime,
-      required final double confidence,
-      @JsonKey(name: 'h4_bias')
-      @DirectionConverter()
-      required final Direction h4Bias,
-      @JsonKey(name: 'h1_regime')
-      @RegimeConverter()
-      required final Regime h1Regime,
-      @JsonKey(name: 'bars_in_regime') required final int barsInRegime,
-      @JsonKey(name: 'regime_changed') required final bool regimeChanged,
+      {final DateTime? timestamp,
+      @CurrencyPairConverter() final CurrencyPair pair,
+      @TimeframeConverter() final Timeframe timeframe,
+      @RegimeConverter() final Regime regime,
+      final double confidence,
+      @JsonKey(name: 'h4_bias') @DirectionConverter() final Direction h4Bias,
+      @JsonKey(name: 'h1_regime') @RegimeConverter() final Regime h1Regime,
+      @JsonKey(name: 'bars_in_regime') final int barsInRegime,
+      @JsonKey(name: 'regime_changed') final bool regimeChanged,
       @JsonKey(name: 'duration_warning')
-      required final bool durationWarning}) = _$RegimeResultImpl;
+      final bool durationWarning}) = _$RegimeResultImpl;
 
   factory _RegimeResult.fromJson(Map<String, dynamic> json) =
       _$RegimeResultImpl.fromJson;
 
   @override
-  DateTime get timestamp;
+  DateTime? get timestamp;
   @override
   @CurrencyPairConverter()
   CurrencyPair get pair;

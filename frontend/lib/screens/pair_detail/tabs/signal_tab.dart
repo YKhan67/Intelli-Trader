@@ -142,11 +142,11 @@ class _SignalTabState extends ConsumerState<SignalTab> {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
-            _buildPriceRow("TAKE PROFIT", signal.takeProfit, AppColors.profitGreen),
+            _buildPriceRow("TAKE PROFIT", signal.takeProfit ?? 0.0, AppColors.profitGreen),
             const SizedBox(height: 8),
-            _buildPriceRow("ENTRY PRICE", signal.entryPrice, AppColors.accentBlue),
+            _buildPriceRow("ENTRY PRICE", signal.entryPrice ?? 0.0, AppColors.accentBlue),
             const SizedBox(height: 8),
-            _buildPriceRow("STOP LOSS", signal.stopLoss, AppColors.lossRed),
+            _buildPriceRow("STOP LOSS", signal.stopLoss ?? 0.0, AppColors.lossRed),
           ],
         ),
       ),

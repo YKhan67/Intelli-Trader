@@ -40,7 +40,12 @@ class SignalsGrid extends ConsumerWidget {
             },
           ),
           loading: () => _buildShimmer(activePairs.length),
-          error: (e, _) => Center(child: Text("Error: $e")),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text("Signals Load Error: $e", textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            ),
+          ),
         ),
       ],
     );
@@ -129,7 +134,7 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
   void didUpdateWidget(_SignalCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.signal?.action != _lastAction && widget.signal != null) {
-      final Color color = widget.signal!.action.color.withOpacity(0.3);
+      final Color color = (widget.signal?.action ?? SignalAction.hold).color.withOpacity(0.3);
       _flashAnimation = ColorTween(begin: color, end: Colors.transparent).animate(_flashController);
       _flashController.forward(from: 0);
       _lastAction = widget.signal!.action;
@@ -160,7 +165,7 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
                 color: signal != null ? signal.action.color.withOpacity(0.5) : AppColors.borderColor,
               ),
               boxShadow: [
-                if (_flashAnimation.value != Colors.transparent)
+                if (_flashAnimation.value != Colors.transparent && _flashAnimation.value != null)
                   BoxShadow(color: _flashAnimation.value!, blurRadius: 10, spreadRadius: 2),
               ],
             ),
@@ -225,7 +230,7 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.only(top: 20),
-                    child: Text("NO SIGNAL", style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    child: Text("WAITING", style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -249,8 +254,8 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
   int _getDisplayConfidence(BackendSignal sig) {
     try {
       double val = sig.confidence;
-      if (val > 1.0) return val.toInt();
-      return (val * 100).toInt();
+      if (val <= 1.0) return (val * 100).toInt();
+      return val.toInt();
     } catch (e) {
       return 0;
     }
@@ -259,7 +264,8 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
   String _formatTimeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inSeconds < 60) return "${diff.inSeconds}s";
-    return "${diff.inMinutes}m";
+    if (diff.inMinutes < 60) return "${diff.inMinutes}m";
+    return "${diff.inHours}h";
   }
 }
 

@@ -9,9 +9,8 @@ part of 'smc_zone.dart';
 _$SMCZoneImpl _$$SMCZoneImplFromJson(Map<String, dynamic> json) =>
     _$SMCZoneImpl(
       id: json['id'] as String,
-      pair: const CurrencyPairConverter().fromJson(json['pair'] as String),
-      timeframe:
-          const TimeframeConverter().fromJson(json['timeframe'] as String),
+      pair: const CurrencyPairConverter().fromJson(json['pair']),
+      timeframe: const TimeframeConverter().fromJson(json['timeframe']),
       zoneType: json['zone_type'] as String,
       priceHigh: (json['price_high'] as num).toDouble(),
       priceLow: (json['price_low'] as num).toDouble(),

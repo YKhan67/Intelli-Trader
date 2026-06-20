@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'trade_record.dart';
 
 part 'performance_metrics.freezed.dart';
 part 'performance_metrics.g.dart';
@@ -6,17 +7,13 @@ part 'performance_metrics.g.dart';
 @freezed
 class PerformanceMetrics with _$PerformanceMetrics {
   const factory PerformanceMetrics({
-    @JsonKey(name: 'total_trades') required int totalTrades,
-    @JsonKey(name: 'win_rate') required double winRate,
-    @JsonKey(name: 'gross_profit') required double grossProfit,
-    @JsonKey(name: 'gross_loss') required double grossLoss,
-    @JsonKey(name: 'net_pnl') required double netPnl,
-    @JsonKey(name: 'max_drawdown') required double maxDrawdown,
-    @JsonKey(name: 'sharpe_ratio') required double sharpeRatio,
-    @JsonKey(name: 'profit_factor') required double profitFactor,
-    @JsonKey(name: 'avg_rr') required double avgRR,
-    @JsonKey(name: 'best_trade_pips') required double bestTradePips,
-    @JsonKey(name: 'worst_trade_pips') required double worstTradePips,
+    @Default({}) Map<String, dynamic> metrics,
+    @JsonKey(name: 'strategy_breakdown') @Default({}) Map<String, dynamic> strategyBreakdown,
+    @JsonKey(name: 'session_performance') @Default({}) Map<String, double> sessionPerformance,
+    @JsonKey(name: 'monthly_returns') @Default({}) Map<String, double> monthlyReturns,
+    @JsonKey(name: 'equity_curve') @Default([]) List<Map<String, dynamic>> equityCurve,
+    @JsonKey(name: 'best_trades') @Default([]) List<TradeRecord> bestTrades,
+    @JsonKey(name: 'worst_trades') @Default([]) List<TradeRecord> worstTrades,
   }) = _PerformanceMetrics;
 
   factory PerformanceMetrics.fromJson(Map<String, dynamic> json) => _$PerformanceMetricsFromJson(json);

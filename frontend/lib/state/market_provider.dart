@@ -58,3 +58,10 @@ SentimentResult? sentiment(SentimentRef ref, CurrencyPair pair) {
   if (marketData == null || marketData['sentiment'] == null) return null;
   return SentimentResult.fromJson(marketData['sentiment']);
 }
+
+@Riverpod(keepAlive: true)
+Future<Map<String, COTData>> cotPositions(CotPositionsRef ref) async {
+  final api = ref.watch(backendServiceProvider);
+  final data = await api.getAllCOT();
+  return data.map((key, value) => MapEntry(key, COTData.fromJson(value as Map<String, dynamic>)));
+}
