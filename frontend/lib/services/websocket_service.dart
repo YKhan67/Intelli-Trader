@@ -12,9 +12,14 @@ class WebSocketService {
   
   final _signalController = StreamController<BackendSignal>.broadcast();
   final _alertController = StreamController<SystemAlert>.broadcast();
+  final _connectionController = StreamController<bool>.broadcast();
 
   Stream<BackendSignal> get signalStream => _signalController.stream;
   Stream<SystemAlert> get alertStream => _alertController.stream;
+  Stream<bool> get connectionStream => _connectionController.stream;
+
+  bool _isConnected = false;
+  bool get isConnected => _isConnected;
 
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
@@ -37,7 +42,10 @@ class WebSocketService {
     try {
       _signalChannel = WebSocketChannel.connect(Uri.parse(url));
       _signalChannel!.stream.listen(
-        (data) => _onSignalMessage(data),
+        (data) {
+          _setConnected(true);
+          _onSignalMessage(data);
+        },
         onDone: () => _handleReconnect(),
         onError: (e) => _handleReconnect(error: e),
       );
@@ -55,11 +63,18 @@ class WebSocketService {
       _alertChannel = WebSocketChannel.connect(Uri.parse(url));
       _alertChannel!.stream.listen(
         (data) => _onAlertMessage(data),
-        onDone: () => {}, // Handled by signal channel reconnect logic for simplicity
+        onDone: () => {},
         onError: (e) => {},
       );
     } catch (e) {
       logger.e('Alert WebSocket connection failed: $e');
+    }
+  }
+
+  void _setConnected(bool val) {
+    if (_isConnected != val) {
+      _isConnected = val;
+      _connectionController.add(val);
     }
   }
 
@@ -88,6 +103,7 @@ class WebSocketService {
   }
 
   void _handleReconnect({dynamic error}) {
+    _setConnected(false);
     if (error != null) logger.w('WebSocket error: $error');
     
     _reconnectAttempts++;
@@ -108,5 +124,6 @@ class WebSocketService {
     _alertChannel?.sink.close();
     _signalController.close();
     _alertController.close();
+    _connectionController.close();
   }
 }

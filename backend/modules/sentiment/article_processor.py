@@ -47,6 +47,9 @@ class ArticleProcessor:
             
             final_score = (f_res["score"] * fb_weight) + (vader_score * vd_weight)
             
+            # Calculate Impact
+            impact = self.calculate_impact(full_text, final_score)
+            
             # Identify currencies mentioned
             mentions = self.extract_currencies(full_text)
             
@@ -56,6 +59,7 @@ class ArticleProcessor:
                 {
                     "$set": {
                         "sentiment_score": final_score,
+                        "impact": impact,
                         "finbert_data": f_res,
                         "vader_score": vader_score,
                         "currencies_mentioned": mentions,
@@ -65,6 +69,18 @@ class ArticleProcessor:
             )
             
         return len(articles)
+
+    def calculate_impact(self, text: str, score: float) -> str:
+        text_up = text.upper()
+        high_keywords = ["URGENT", "BREAKING", "CRITICAL", "FED", "RATE DECISION", "CPI", "NFP", "WAR", "CRASH", "SURGE"]
+        med_keywords = ["EXPECTED", "FORECAST", "RETAIL SALES", "GDP", "MANUFACTURING", "STOCKS", "OIL"]
+        
+        # Heuristic: Keywords + extreme sentiment = High Impact
+        if any(kw in text_up for kw in high_keywords) or abs(score) > 0.8:
+            return "HIGH"
+        if any(kw in text_up for kw in med_keywords) or abs(score) > 0.5:
+            return "MEDIUM"
+        return "LOW"
 
     def extract_currencies(self, text: str) -> List[str]:
         found = []

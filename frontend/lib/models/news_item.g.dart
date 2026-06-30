@@ -16,6 +16,9 @@ _$NewsItemImpl _$$NewsItemImplFromJson(Map<String, dynamic> json) =>
       headline: json['headline'] as String? ?? 'No Headline',
       body: json['body'] as String? ?? '',
       sentimentScore: (json['sentiment_score'] as num?)?.toDouble() ?? 0.0,
+      impact: json['impact'] == null
+          ? ImpactLevel.low
+          : const ImpactLevelConverter().fromJson(json['impact']),
       currenciesMentioned: (json['currencies_mentioned'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -31,6 +34,7 @@ Map<String, dynamic> _$$NewsItemImplToJson(_$NewsItemImpl instance) =>
       'headline': instance.headline,
       'body': instance.body,
       'sentiment_score': instance.sentimentScore,
+      'impact': const ImpactLevelConverter().toJson(instance.impact),
       'currencies_mentioned': instance.currenciesMentioned,
       'url': instance.url,
     };

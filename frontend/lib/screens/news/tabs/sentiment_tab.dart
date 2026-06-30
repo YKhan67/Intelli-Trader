@@ -30,13 +30,13 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
           overviewAsync.when(
             data: (ov) => _buildCurrencyGauges(ov.currencies),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text("Error: $e"),
+            error: (e, _) => Text("Sentiment Load Error: $e", style: const TextStyle(fontSize: 10)),
           ),
           const SizedBox(height: AppSpacing.lg),
           _buildSectionHeader("PAIR SENTIMENT RANKING"),
           overviewAsync.when(
             data: (ov) => _buildPairRanking(ov.pairSentiment),
-            loading: () => const SizedBox(height: 100),
+            loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
             error: (e, _) => const SizedBox.shrink(),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -64,6 +64,8 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
   }
 
   Widget _buildCurrencyGauges(Map<String, CurrencySentiment> currencies) {
+    if (currencies.isEmpty) return const Card(child: Padding(padding: EdgeInsets.all(16), child: Center(child: Text("No currency sentiment data"))));
+
     final sortedCurrencies = currencies.values.toList()
       ..sort((a, b) => b.score4h.abs().compareTo(a.score4h.abs()));
       
@@ -132,7 +134,7 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
   }
 
   Widget _buildPairRanking(List<PairSentimentScore> pairs) {
-    if (pairs.isEmpty) return const Center(child: Text("No pair data", style: TextStyle(fontSize: 10)));
+    if (pairs.isEmpty) return const Center(child: Text("No pair ranking available", style: TextStyle(fontSize: 10)));
     
     final sorted = List<PairSentimentScore>.from(pairs)..sort((a, b) => b.score.compareTo(a.score));
 
@@ -143,7 +145,7 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
         itemCount: sorted.length,
         itemBuilder: (context, index) {
           final p = sorted[index];
-          final color = p.score > 0.2 ? AppColors.buyGreen : (p.score < -0.2 ? AppColors.sellRed : Colors.grey);
+          final color = p.score > 0.1 ? AppColors.buyGreen : (p.score < -0.1 ? AppColors.sellRed : Colors.grey);
           return ListTile(
             dense: true,
             visualDensity: VisualDensity.compact,
@@ -163,8 +165,9 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
 
     return cotAsync.when(
       data: (cotMap) {
+        if (cotMap.isEmpty) return const Card(child: Padding(padding: EdgeInsets.all(16), child: Center(child: Text("No COT positioning data available"))));
+        
         final currencies = cotMap.keys.toList();
-        if (currencies.isEmpty) return const Center(child: Text("No COT data available", style: TextStyle(fontSize: 10)));
 
         return Card(
           child: Padding(
@@ -219,16 +222,6 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
     );
   }
 
-  BarChartGroupData _makeCOTGroup(int x, double val, double prev) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(toY: val, color: val >= 0 ? AppColors.buyGreen : AppColors.sellRed, width: 8),
-        BarChartRodData(toY: prev, color: (prev >= 0 ? AppColors.buyGreen : AppColors.sellRed).withOpacity(0.3), width: 8),
-      ],
-    );
-  }
-
   Widget _buildHistorySection() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: ref.read(backendServiceProvider).getSentimentHistory(_selectedHistoryCurrency),
@@ -253,7 +246,7 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
                 SizedBox(
                   height: 150,
                   child: spots.isEmpty 
-                    ? const Center(child: Text("Loading history...", style: TextStyle(fontSize: 10)))
+                    ? const Center(child: Text("No historical data for this currency", style: TextStyle(fontSize: 10)))
                     : LineChart(
                         LineChartData(
                           gridData: const FlGridData(show: false),

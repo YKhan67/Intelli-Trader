@@ -74,12 +74,10 @@ async def get_all_sentiment():
         from backend.modules.sentiment.sentiment_manager import SentimentManager
         sm = SentimentManager()
         
-        # Track every currency in the universe
         currencies = ["USD", "EUR", "GBP", "JPY", "AUD", "NZD", "CAD", "CHF", "XAU", "BTC", "ETH"]
         currency_map = {}
         for c in currencies:
             try:
-                # Map to a valid pair for the sentiment engine
                 if c == "USD": lookup = "EURUSD"
                 elif c == "XAU": lookup = "XAUUSD"
                 elif c == "BTC": lookup = "BTCUSD"
@@ -87,7 +85,6 @@ async def get_all_sentiment():
                 else: lookup = f"{c}USD"
                 
                 res = await sm.get_sentiment(lookup)
-                # For USD, we invert EURUSD to show USD strength
                 score = -float(res.pair_score) if c == "USD" else float(res.pair_score)
                 
                 currency_map[c] = {
@@ -99,7 +96,6 @@ async def get_all_sentiment():
             except:
                 currency_map[c] = {"currency": c, "score_4h": 0.0, "score_24h": 0.0, "trend": "stable"}
         
-        # Generate Rankings for ALL configured pairs
         pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
         pair_rankings = []
         for p in pairs:
@@ -117,15 +113,24 @@ async def get_all_sentiment():
 @router.get("/sentiment/history/{currency}")
 async def get_sentiment_history(currency: str):
     try:
-        now = datetime.now(timezone.utc)
+        from backend.database.mongo import get_mongo_db
+        db = get_mongo_db()
+        cursor = db.sentiment_snapshots.find({"window": "4H"}).sort("timestamp", -1).limit(30)
+        snapshots = await cursor.to_list(length=30)
+        
         history = []
-        # Return 14 data points (half-day intervals) for the line chart
-        for i in range(14):
+        for s in snapshots:
             history.append({
-                "timestamp": (now - timedelta(hours=i*12)).isoformat(),
-                "score": float(random.uniform(-0.5, 0.5))
+                "timestamp": s["timestamp"].isoformat(),
+                "score": float(s["scores"].get(currency.upper(), 0.0))
             })
-        return APIResponse(data=history)
+        
+        if not history:
+            now = datetime.now(timezone.utc)
+            for i in [0,1,2,3,4,5,6]: # Simple list to avoid range issue
+                history.append({"timestamp": (now - timedelta(days=i)).isoformat(), "score": 0.0})
+        
+        return APIResponse(data=history[::-1])
     except Exception as e:
         return APIResponse(status="error", message=str(e))
 
@@ -144,6 +149,7 @@ async def get_all_news(limit: int = 50):
                 "headline": str(doc.get("headline", "No Title")),
                 "body": str(doc.get("body", "")),
                 "sentimentScore": float(doc.get("sentiment_score", 0.0)),
+                "impact": str(doc.get("impact", "LOW")).upper(),
                 "currenciesMentioned": [str(c) for c in doc.get("currencies_mentioned", [])],
                 "url": str(doc.get("url", ""))
             })
@@ -153,8 +159,51 @@ async def get_all_news(limit: int = 50):
 
 @router.get("/news/{pair}")
 async def get_pair_news(pair: str):
-    # Route for single pair detail page news tab
     return await get_all_news(limit=20)
+
+@router.get("/drivers")
+async def get_market_drivers():
+    try:
+        from backend.database.mongo import get_mongo_db
+        db = get_mongo_db()
+        cursor = db.news_articles.find({"impact": "HIGH"}).sort("timestamp", -1).limit(1)
+        top_news = await cursor.to_list(length=1)
+        
+        redis = get_redis_client()
+        keys = await redis.keys("sentiment:*:4H")
+        scores = {}
+        for k in keys:
+            # Safer parsing for k
+            k_str = k.decode() if hasattr(k, 'decode') else str(k)
+            curr = k_str.split(":")[1]
+            val = await redis.get(k)
+            scores[curr] = float(val)
+        
+        top_curr = "USD"
+        max_abs = 0.0
+        for c in scores:
+            s = scores[c]
+            s_abs = s if s >= 0 else -s
+            if s_abs > max_abs:
+                max_abs = s_abs
+                top_curr = c
+
+        driver_text = "Market is currently stable."
+        if top_news:
+            driver_text = f"Market is driven by: {top_news[0]['headline']}"
+        elif scores:
+            s_val = scores[top_curr]
+            sentiment_word = "Bullish" if s_val > 0 else "Bearish"
+            driver_text = f"Strong {sentiment_word} sentiment detected in {top_curr}."
+
+        return APIResponse(data={
+            "summary": driver_text,
+            "top_currency": top_curr,
+            "impact_level": "HIGH" if top_news else "MEDIUM"
+        })
+    except Exception as e:
+        logger.error(f"Drivers error: {e}")
+        return APIResponse(data={"summary": "Market context initializing...", "top_currency": "USD", "impact_level": "LOW"})
 
 @router.get("/ohlcv/{pair}")
 async def get_ohlcv(pair: str, timeframe: str = "H1", limit: int = 100):
@@ -208,15 +257,24 @@ async def get_smc_zones(pair: str, timeframe: str = "H1"):
     except Exception as e:
         return APIResponse(status="error", message=str(e))
 
+@router.get("/{pair}")
+async def get_market_state(pair: str):
+    try:
+        redis = get_redis_client()
+        pair_key = pair.upper()
+        signal_json = await redis.get(f"signal:{pair_key}:latest")
+        if not signal_json: return APIResponse(data={"regime": None, "sentiment": None, "decision": None})
+        return APIResponse(data=json.loads(signal_json))
+    except:
+        return APIResponse(data={"regime": None, "sentiment": None, "decision": None})
+
 @router.get("/cot/all")
 async def get_all_cot():
     try:
         async with AsyncSessionLocal() as session:
-            # Get latest COT for each currency
             stmt = select(COTDataDB).order_by(COTDataDB.currency, COTDataDB.week_ending.desc())
             res = await session.execute(stmt)
             all_data = res.scalars().all()
-            
             latest_cot = {}
             for d in all_data:
                 if d.currency not in latest_cot:
@@ -228,14 +286,3 @@ async def get_all_cot():
             return APIResponse(data=latest_cot)
     except Exception as e:
         return APIResponse(status="error", message=str(e))
-
-@router.get("/{pair}")
-async def get_market_state(pair: str):
-    try:
-        redis = get_redis_client()
-        pair_key = pair.upper()
-        signal_json = await redis.get(f"signal:{pair_key}:latest")
-        if not signal_json: return APIResponse(data={"regime": None, "sentiment": None, "decision": None})
-        return APIResponse(data=json.loads(signal_json))
-    except:
-        return APIResponse(data={"regime": None, "sentiment": None, "decision": None})

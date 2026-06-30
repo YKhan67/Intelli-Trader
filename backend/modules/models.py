@@ -324,6 +324,7 @@ class NewsItem(BaseModel):
     body: str = Field(..., description="Full text or summary of the article")
     currencies_mentioned: List[str] = Field(..., description="List of currencies discussed")
     sentiment_score: float = Field(..., ge=-1.0, le=1.0, description="Calculated sentiment score")
+    impact: ImpactLevel = Field(default=ImpactLevel.LOW, description="Calculated market impact level")
     is_processed: bool = Field(..., description="Whether the article has been analyzed")
 
 class CalendarEvent(BaseModel):

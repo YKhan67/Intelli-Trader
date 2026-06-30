@@ -8,6 +8,7 @@ import '../../state/providers.dart';
 import '../../state/trade_history_filter_provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
+import '../../widgets/metric_card.dart';
 
 class PerformanceScreen extends ConsumerStatefulWidget {
   const PerformanceScreen({super.key});
@@ -116,16 +117,40 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-      childAspectRatio: 2.0,
+      childAspectRatio: 1.5,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       children: [
-        _StatCard("Total Return", "${netPnl >= 0 ? '+' : ''}${netPnl.toStringAsFixed(2)} USD", color: netPnl >= 0 ? AppColors.buyGreen : AppColors.sellRed),
-        _StatCard("Sharpe Ratio", "${m['sharpe_ratio'] ?? '1.85'}", color: AppColors.accentBlue),
-        _StatCard("Win Rate", "${winRate.toStringAsFixed(1)}%", color: winRate >= 50 ? AppColors.buyGreen : Colors.orange),
-        _StatCard("Max DD", "-${maxDd.toStringAsFixed(1)}%", color: AppColors.sellRed),
-        _StatCard("Profit Factor", profitFactor.toStringAsFixed(2), color: profitFactor > 1.2 ? AppColors.buyGreen : Colors.orange),
-        _StatCard("Avg R:R", "1:${avgRr.toStringAsFixed(1)}", color: AppColors.accentBlue),
+        MetricCard(
+          label: "Total Return",
+          value: "${netPnl >= 0 ? '+' : ''}${netPnl.toStringAsFixed(2)} USD",
+          valueColor: netPnl >= 0 ? AppColors.buyGreen : AppColors.sellRed,
+          isPositiveTrend: netPnl >= 0,
+        ),
+        MetricCard(
+          label: "Sharpe Ratio",
+          value: "${m['sharpe_ratio'] ?? '1.85'}",
+          icon: Icons.analytics,
+        ),
+        MetricCard(
+          label: "Win Rate",
+          value: "${winRate.toStringAsFixed(2)}%",
+          valueColor: winRate >= 50 ? AppColors.buyGreen : Colors.orange,
+        ),
+        MetricCard(
+          label: "Max DD",
+          value: "-${maxDd.toStringAsFixed(2)}%",
+          valueColor: AppColors.sellRed,
+        ),
+        MetricCard(
+          label: "Profit Factor",
+          value: profitFactor.toStringAsFixed(2),
+          valueColor: profitFactor > 1.2 ? AppColors.buyGreen : Colors.orange,
+        ),
+        MetricCard(
+          label: "Avg R:R",
+          value: "1:${avgRr.toStringAsFixed(1)}",
+        ),
       ],
     );
   }
@@ -227,57 +252,74 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
   }
 
   Widget _buildMonthlyReturns(Map<String, double> returns) {
+    // Determine which year to show. Default to current year, 
+    // but allowing for historical views if the data dictates it.
+    final int displayYear = DateTime.now().year;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Monthly Returns", style: TextStyle(fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Monthly Returns", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text("$displayYear", style: const TextStyle(fontSize: 12, color: AppColors.accentBlue, fontWeight: FontWeight.bold)),
+              ],
+            ),
             const SizedBox(height: 12),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 6, 
-                childAspectRatio: 1.0,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
+                crossAxisCount: 4, // More readable on smaller screens
+                childAspectRatio: 1.4,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
               ),
               itemCount: 12,
               itemBuilder: (context, index) {
                 final monthNum = index + 1;
-                final monthDate = DateTime(DateTime.now().year, monthNum);
+                final monthDate = DateTime(displayYear, monthNum);
                 final key = DateFormat('yyyy-MM').format(monthDate);
                 final val = returns[key] ?? 0.0;
                 
-                Color color = Colors.white10;
-                if (val > 1000) color = Colors.green.shade900;
-                else if (val > 0) color = Colors.green.shade600;
-                else if (val < -1000) color = Colors.red.shade900;
-                else if (val < 0) color = Colors.red.shade600;
+                Color color = AppColors.backgroundElevated;
+                if (val > 1000) color = AppColors.buyGreen.withOpacity(0.8);
+                else if (val > 0) color = AppColors.buyGreen.withOpacity(0.4);
+                else if (val < -1000) color = AppColors.sellRed.withOpacity(0.8);
+                else if (val < 0) color = AppColors.sellRed.withOpacity(0.4);
 
                 return InkWell(
                   onTap: () {
-                    final start = DateTime(DateTime.now().year, monthNum, 1);
-                    final nextMonth = monthNum == 12 ? 1 : monthNum + 1;
-                    final year = monthNum == 12 ? DateTime.now().year + 1 : DateTime.now().year;
-                    final end = DateTime(year, nextMonth, 0);
+                    final start = DateTime(displayYear, monthNum, 1);
+                    final end = DateTime(displayYear, monthNum + 1, 0);
                     
                     ref.read(tradeHistoryFilterProvider.notifier).state = 
                       TradeFilters(dateRange: DateTimeRange(start: start, end: end));
                     context.go('/history');
                   },
                   child: Container(
-                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(DateFormat('MMM').format(monthDate), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                          if (val != 0) Text("${val > 0 ? '+' : ''}${(val/100).toStringAsFixed(0)}%", style: const TextStyle(fontSize: 7)),
-                        ],
-                      ),
+                    decoration: BoxDecoration(
+                      color: color, 
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat('MMM').format(monthDate).toUpperCase(), 
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+                        ),
+                        if (val != 0) 
+                          Text(
+                            "${val > 0 ? '+' : ''}${val.toStringAsFixed(0)}", 
+                            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -363,29 +405,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
         const SizedBox(width: 8),
         Expanded(child: _TradeMiniList(title: "Worst Trades", trades: perf.worstTrades, isLoss: true)),
       ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final Color color;
-  const _StatCard(this.title, this.value, {required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: color.withOpacity(0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: color.withOpacity(0.2))),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-        ],
-      ),
     );
   }
 }

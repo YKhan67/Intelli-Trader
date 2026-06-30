@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:forex_ai_frontend/theme/colors.dart';
+import 'enums.dart';
+import 'converters.dart';
 
 part 'news_item.freezed.dart';
 part 'news_item.g.dart';
@@ -14,6 +16,7 @@ class NewsItem with _$NewsItem {
     @Default('No Headline') String headline,
     @Default('') String body,
     @JsonKey(name: 'sentiment_score') @Default(0.0) double sentimentScore,
+    @ImpactLevelConverter() @Default(ImpactLevel.low) ImpactLevel impact,
     @JsonKey(name: 'currencies_mentioned') @Default([]) List<String> currenciesMentioned,
     @Default('') String url,
   }) = _NewsItem;

@@ -59,8 +59,8 @@ class _FakeSentimentOverview_2 extends _i1.SmartFake
         );
 }
 
-class _FakeRiskParams_3 extends _i1.SmartFake implements _i2.RiskParams {
-  _FakeRiskParams_3(
+class _FakeMarketDriver_3 extends _i1.SmartFake implements _i2.MarketDriver {
+  _FakeMarketDriver_3(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -69,8 +69,18 @@ class _FakeRiskParams_3 extends _i1.SmartFake implements _i2.RiskParams {
         );
 }
 
-class _FakeAccountInfo_4 extends _i1.SmartFake implements _i2.AccountInfo {
-  _FakeAccountInfo_4(
+class _FakeRiskParams_4 extends _i1.SmartFake implements _i2.RiskParams {
+  _FakeRiskParams_4(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeAccountInfo_5 extends _i1.SmartFake implements _i2.AccountInfo {
+  _FakeAccountInfo_5(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -394,6 +404,21 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
       ) as _i4.Future<_i2.SentimentOverview>);
 
   @override
+  _i4.Future<_i2.MarketDriver> getMarketDrivers() => (super.noSuchMethod(
+        Invocation.method(
+          #getMarketDrivers,
+          [],
+        ),
+        returnValue: _i4.Future<_i2.MarketDriver>.value(_FakeMarketDriver_3(
+          this,
+          Invocation.method(
+            #getMarketDrivers,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.MarketDriver>);
+
+  @override
   _i4.Future<Map<String, dynamic>> getAllCOT() => (super.noSuchMethod(
         Invocation.method(
           #getAllCOT,
@@ -482,7 +507,7 @@ class MockBackendService extends _i1.Mock implements _i6.BackendService {
           #getRisk,
           [],
         ),
-        returnValue: _i4.Future<_i2.RiskParams>.value(_FakeRiskParams_3(
+        returnValue: _i4.Future<_i2.RiskParams>.value(_FakeRiskParams_4(
           this,
           Invocation.method(
             #getRisk,
@@ -570,7 +595,7 @@ class MockBrokerInterface extends _i1.Mock implements _i7.BrokerInterface {
           #getAccountInfo,
           [],
         ),
-        returnValue: _i4.Future<_i2.AccountInfo>.value(_FakeAccountInfo_4(
+        returnValue: _i4.Future<_i2.AccountInfo>.value(_FakeAccountInfo_5(
           this,
           Invocation.method(
             #getAccountInfo,

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:csv/csv.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../models/models.dart';
 import '../../state/providers.dart';
 import '../../state/trade_history_filter_provider.dart';
@@ -188,11 +192,65 @@ class TradeHistoryScreen extends ConsumerWidget {
     );
   }
 
-  void _exportToCSV(BuildContext context, List<TradeRecord> trades) {
-    // Implementation placeholder for CSV logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Exported ${trades.length} trades to CSV")),
-    );
+  Future<void> _exportToCSV(BuildContext context, List<TradeRecord> trades) async {
+    if (trades.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No trades to export")),
+      );
+      return;
+    }
+
+    try {
+      final List<List<dynamic>> rows = [];
+      
+      // Header
+      rows.add([
+        "UUID", "Pair", "Direction", "Strategy", "Entry Price", "Exit Price", 
+        "Entry Time", "Exit Time", "Lots", "Pips", "PnL", "Status", "Type"
+      ]);
+
+      // Data Rows
+      for (var t in trades) {
+        rows.add([
+          t.tradeUuid,
+          t.pair.displayName,
+          t.direction.name.toUpperCase(),
+          t.strategy.displayName,
+          t.entryPrice?.toStringAsFixed(5) ?? "",
+          t.exitPrice?.toStringAsFixed(5) ?? "",
+          t.entryTime?.toIso8601String() ?? "",
+          t.exitTime?.toIso8601String() ?? "",
+          t.lotSize?.toStringAsFixed(2) ?? "",
+          t.pipsResult?.toStringAsFixed(1) ?? "",
+          t.netProfitLoss?.toStringAsFixed(2) ?? "",
+          t.status.name.toUpperCase(),
+          t.tradeType.name.toUpperCase(),
+        ]);
+      }
+
+      String csvData = const ListToCsvConverter().convert(rows);
+      
+      final directory = await getTemporaryDirectory();
+      final String path = "${directory.path}/trade_history_${DateTime.now().millisecondsSinceEpoch}.csv";
+      final File file = File(path);
+      await file.writeAsString(csvData);
+
+      final result = await Share.shareXFiles([XFile(path)], text: 'ForexAI Trade History Export');
+
+      if (result.status == ShareResultStatus.success) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("CSV Exported Successfully")),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Export failed: $e"), backgroundColor: AppColors.sellRed),
+        );
+      }
+    }
   }
 }
 

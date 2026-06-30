@@ -197,6 +197,11 @@ class BackendService {
         (data) => SentimentOverview.fromJson(data as Map<String, dynamic>),
       );
 
+  Future<MarketDriver> getMarketDrivers() => _handleRequest(
+        _dio.get('/market/drivers'),
+        (data) => MarketDriver.fromJson(data as Map<String, dynamic>),
+      );
+
   Future<Map<String, dynamic>> getAllCOT() => _handleRequest(
         _dio.get('/market/cot/all'),
         (data) => data as Map<String, dynamic>,

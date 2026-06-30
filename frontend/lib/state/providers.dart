@@ -11,3 +11,4 @@ export 'alert_provider.dart';
 export 'account_provider.dart';
 export 'sentiment_provider.dart';
 export 'trade_history_filter_provider.dart';
+export 'market_driver_provider.dart';

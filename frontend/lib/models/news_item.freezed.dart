@@ -28,6 +28,8 @@ mixin _$NewsItem {
   String get body => throw _privateConstructorUsedError;
   @JsonKey(name: 'sentiment_score')
   double get sentimentScore => throw _privateConstructorUsedError;
+  @ImpactLevelConverter()
+  ImpactLevel get impact => throw _privateConstructorUsedError;
   @JsonKey(name: 'currencies_mentioned')
   List<String> get currenciesMentioned => throw _privateConstructorUsedError;
   String get url => throw _privateConstructorUsedError;
@@ -54,6 +56,7 @@ abstract class $NewsItemCopyWith<$Res> {
       String headline,
       String body,
       @JsonKey(name: 'sentiment_score') double sentimentScore,
+      @ImpactLevelConverter() ImpactLevel impact,
       @JsonKey(name: 'currencies_mentioned') List<String> currenciesMentioned,
       String url});
 }
@@ -79,6 +82,7 @@ class _$NewsItemCopyWithImpl<$Res, $Val extends NewsItem>
     Object? headline = null,
     Object? body = null,
     Object? sentimentScore = null,
+    Object? impact = null,
     Object? currenciesMentioned = null,
     Object? url = null,
   }) {
@@ -107,6 +111,10 @@ class _$NewsItemCopyWithImpl<$Res, $Val extends NewsItem>
           ? _value.sentimentScore
           : sentimentScore // ignore: cast_nullable_to_non_nullable
               as double,
+      impact: null == impact
+          ? _value.impact
+          : impact // ignore: cast_nullable_to_non_nullable
+              as ImpactLevel,
       currenciesMentioned: null == currenciesMentioned
           ? _value.currenciesMentioned
           : currenciesMentioned // ignore: cast_nullable_to_non_nullable
@@ -134,6 +142,7 @@ abstract class _$$NewsItemImplCopyWith<$Res>
       String headline,
       String body,
       @JsonKey(name: 'sentiment_score') double sentimentScore,
+      @ImpactLevelConverter() ImpactLevel impact,
       @JsonKey(name: 'currencies_mentioned') List<String> currenciesMentioned,
       String url});
 }
@@ -157,6 +166,7 @@ class __$$NewsItemImplCopyWithImpl<$Res>
     Object? headline = null,
     Object? body = null,
     Object? sentimentScore = null,
+    Object? impact = null,
     Object? currenciesMentioned = null,
     Object? url = null,
   }) {
@@ -185,6 +195,10 @@ class __$$NewsItemImplCopyWithImpl<$Res>
           ? _value.sentimentScore
           : sentimentScore // ignore: cast_nullable_to_non_nullable
               as double,
+      impact: null == impact
+          ? _value.impact
+          : impact // ignore: cast_nullable_to_non_nullable
+              as ImpactLevel,
       currenciesMentioned: null == currenciesMentioned
           ? _value._currenciesMentioned
           : currenciesMentioned // ignore: cast_nullable_to_non_nullable
@@ -207,6 +221,7 @@ class _$NewsItemImpl extends _NewsItem {
       this.headline = 'No Headline',
       this.body = '',
       @JsonKey(name: 'sentiment_score') this.sentimentScore = 0.0,
+      @ImpactLevelConverter() this.impact = ImpactLevel.low,
       @JsonKey(name: 'currencies_mentioned')
       final List<String> currenciesMentioned = const [],
       this.url = ''})
@@ -233,6 +248,10 @@ class _$NewsItemImpl extends _NewsItem {
   @override
   @JsonKey(name: 'sentiment_score')
   final double sentimentScore;
+  @override
+  @JsonKey()
+  @ImpactLevelConverter()
+  final ImpactLevel impact;
   final List<String> _currenciesMentioned;
   @override
   @JsonKey(name: 'currencies_mentioned')
@@ -249,7 +268,7 @@ class _$NewsItemImpl extends _NewsItem {
 
   @override
   String toString() {
-    return 'NewsItem(articleUuid: $articleUuid, timestamp: $timestamp, source: $source, headline: $headline, body: $body, sentimentScore: $sentimentScore, currenciesMentioned: $currenciesMentioned, url: $url)';
+    return 'NewsItem(articleUuid: $articleUuid, timestamp: $timestamp, source: $source, headline: $headline, body: $body, sentimentScore: $sentimentScore, impact: $impact, currenciesMentioned: $currenciesMentioned, url: $url)';
   }
 
   @override
@@ -267,6 +286,7 @@ class _$NewsItemImpl extends _NewsItem {
             (identical(other.body, body) || other.body == body) &&
             (identical(other.sentimentScore, sentimentScore) ||
                 other.sentimentScore == sentimentScore) &&
+            (identical(other.impact, impact) || other.impact == impact) &&
             const DeepCollectionEquality()
                 .equals(other._currenciesMentioned, _currenciesMentioned) &&
             (identical(other.url, url) || other.url == url));
@@ -282,6 +302,7 @@ class _$NewsItemImpl extends _NewsItem {
       headline,
       body,
       sentimentScore,
+      impact,
       const DeepCollectionEquality().hash(_currenciesMentioned),
       url);
 
@@ -309,6 +330,7 @@ abstract class _NewsItem extends NewsItem {
       final String headline,
       final String body,
       @JsonKey(name: 'sentiment_score') final double sentimentScore,
+      @ImpactLevelConverter() final ImpactLevel impact,
       @JsonKey(name: 'currencies_mentioned')
       final List<String> currenciesMentioned,
       final String url}) = _$NewsItemImpl;
@@ -331,6 +353,9 @@ abstract class _NewsItem extends NewsItem {
   @override
   @JsonKey(name: 'sentiment_score')
   double get sentimentScore;
+  @override
+  @ImpactLevelConverter()
+  ImpactLevel get impact;
   @override
   @JsonKey(name: 'currencies_mentioned')
   List<String> get currenciesMentioned;

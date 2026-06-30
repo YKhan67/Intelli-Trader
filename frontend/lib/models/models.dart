@@ -15,3 +15,4 @@ export 'smc_zone.dart';
 export 'indicator_set.dart';
 export 'sentiment_overview.dart';
 export 'cot_data.dart';
+export 'market_driver.dart';
