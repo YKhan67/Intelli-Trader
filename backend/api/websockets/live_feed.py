@@ -1,64 +1,110 @@
 import asyncio
 import logging
 import json
-from typing import Dict, List
+from typing import Dict, List, Set, Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from backend.database.redis_client import get_redis_client
 
 logger = logging.getLogger("LiveFeedWS")
-
 router = APIRouter(tags=["websockets"])
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.active_connections: List[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket, pair: str):
+    async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        if pair not in self.active_connections:
-            self.active_connections[pair] = []
-        self.active_connections[pair].append(websocket)
+        self.active_connections.append(websocket)
 
-    def disconnect(self, websocket: WebSocket, pair: str):
-        if pair in self.active_connections:
-            self.active_connections[pair].remove(websocket)
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            try:
+                self.active_connections.remove(websocket)
+            except: pass
 
-    async def broadcast(self, pair: str, message: str):
-        if pair in self.active_connections:
-            for connection in self.active_connections[pair]:
-                await connection.send_text(message)
+    async def safe_send(self, websocket: WebSocket, data: Any):
+        try:
+            await websocket.send_json(data)
+            return True
+        except:
+            return False
 
 manager = ConnectionManager()
 
-@router.websocket("/live/{pair}")
-async def live_signal_feed(websocket: WebSocket, pair: str):
-    await manager.connect(websocket, pair)
+@router.websocket("/live/all")
+async def global_signal_feed(websocket: WebSocket):
+    """
+    LOGICAL FIX: The Global Bridge.
+    Streams ALL signals for ALL pairs through a single permanent pipe.
+    """
+    logger.info("Global WebSocket Request Received")
+    
+    try:
+        await manager.connect(websocket)
+    except Exception as e:
+        logger.error(f"Global WebSocket Connection Rejected: {e}")
+        return
+
+    logger.info(">>> COMMUNICATION BRIDGE: ONLINE (Global Mode)")
     redis = get_redis_client()
     
-    # 1. Send latest signal immediately on connect
-    last_sig = await redis.get(f"signal:{pair}")
-    if last_sig:
-        await websocket.send_text(last_sig)
-
+    # 1. Initial State Sync
     try:
-        # 2. Listen for new signals via Redis Pub/Sub
+        keys = await redis.keys("signal:*:latest")
+        if keys:
+            for key in keys:
+                # Handle bytes/string key differences
+                k = key.decode() if isinstance(key, bytes) else key
+                sig = await redis.get(k)
+                if sig:
+                    await manager.safe_send(websocket, {"type": "signal", "data": json.loads(sig)})
+    except Exception as e:
+        logger.warning(f"Initial state push failed: {e}")
+
+    pubsub = None
+    try:
         pubsub = redis.pubsub()
-        await pubsub.subscribe(f"channel:signals:{pair}")
+        await pubsub.psubscribe("channel:signals:*")
         
         while True:
-            # Heartbeat check
             try:
-                # Wait for message with timeout for heartbeat
-                message = await asyncio.wait_for(pubsub.get_message(), timeout=30.0)
-                if message and message['type'] == 'message':
-                    await websocket.send_text(message['data'])
+                # Institutional 15s Heartbeat Logic
+                message = await asyncio.wait_for(pubsub.get_message(ignore_subscribe_messages=True), timeout=15.0)
+                
+                if message and message['type'] == 'pmessage':
+                    if not await manager.safe_send(websocket, {
+                        "type": "signal", 
+                        "data": json.loads(message['data'])
+                    }):
+                        break
+                        
             except asyncio.TimeoutError:
-                # Send ping
-                await websocket.send_json({"type": "ping", "timestamp": str(asyncio.get_event_loop().time())})
+                # KEEP-ALIVE: Prevent Windows/Router from dropping silent pipes
+                if not await manager.safe_send(websocket, {
+                    "type": "heartbeat", 
+                    "status": "operational"
+                }):
+                    break
+            except asyncio.CancelledError:
+                raise
                 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, pair)
-        logger.info(f"Client disconnected from live feed for {pair}")
+        logger.info("Client disconnected from Global Signal Bridge")
     except Exception as e:
-        logger.error(f"WebSocket error for {pair}: {e}")
-        manager.disconnect(websocket, pair)
+        logger.error(f"Global Bridge error: {e}")
+    finally:
+        manager.disconnect(websocket)
+        if pubsub:
+            try:
+                await pubsub.punsubscribe("channel:signals:*")
+            except: pass
+
+@router.websocket("/live/{pair}")
+async def legacy_live_feed(websocket: WebSocket, pair: str):
+    await websocket.accept()
+    try:
+        while True:
+            await websocket.send_json({"type": "info", "message": "Redirecting to /live/all"})
+            await asyncio.sleep(60)
+    except:
+        pass

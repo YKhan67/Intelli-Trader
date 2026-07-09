@@ -1,5 +1,8 @@
+import logging
 from typing import Dict, Any, Tuple, Optional
 from backend.modules.models import Strategy, Direction
+
+logger = logging.getLogger("TPCalc")
 
 class TakeProfitCalculator:
     def __init__(self, config: Dict[str, Any]):
@@ -11,7 +14,8 @@ class TakeProfitCalculator:
                               strategy: Strategy, 
                               entry_price: float, 
                               sl_price: float,
-                              atr: float) -> Tuple[float, float, float, float, bool]:
+                              atr: float,
+                              pip_size: float = 0.0001) -> Tuple[float, float, float, float, bool]:
         """
         Calculates ATR-based take profit and partial exit levels.
         Returns (tp_price, tp_pips, partial_price, be_price, rr_acceptable)
@@ -28,7 +32,12 @@ class TakeProfitCalculator:
             tp_price = entry_price - tp_distance
 
         # 2. Risk:Reward Ratio Check
-        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
+        # Institutional safety: if sl_distance is 0 or extremely small, block trade
+        if sl_distance < (pip_size * 2):
+            logger.warning(f"Rejecting trade: Stop Loss too tight ({sl_distance/pip_size:.1f} pips)")
+            return 0, 0, 0, 0, False
+
+        rr_ratio = tp_distance / sl_distance
         rr_acceptable = rr_ratio >= self.min_rr
 
         # 3. Partial Exit & Breakeven
@@ -36,12 +45,11 @@ class TakeProfitCalculator:
         partial_dist = tp_distance * 0.5
         if direction == Direction.LONG:
             partial_price = entry_price + partial_dist
-            # Breakeven is usually entry price
-            be_price = entry_price + (2 * 0.0001) # Small buffer
+            be_price = entry_price + (2 * pip_size) # Institutional buffer
         else:
             partial_price = entry_price - partial_dist
-            be_price = entry_price - (2 * 0.0001)
+            be_price = entry_price - (2 * pip_size)
 
-        tp_pips = tp_distance / 0.0001 # Approximation
+        tp_pips = tp_distance / pip_size
         
         return tp_price, tp_pips, partial_price, be_price, rr_acceptable

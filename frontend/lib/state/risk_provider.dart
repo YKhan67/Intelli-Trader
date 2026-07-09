@@ -1,23 +1,26 @@
 import 'dart:async';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'services_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core_services.dart';
 import '../models/models.dart';
 
-part 'risk_provider.g.dart';
-
-@Riverpod(keepAlive: true)
-Future<RiskParams> risk(RiskRef ref) async {
+/// Provider for real-time risk parameters and circuit breaker status from the backend.
+final riskProvider = FutureProvider<RiskParams>((ref) async {
   final api = ref.watch(backendServiceProvider);
   
-  final timer = Timer(const Duration(seconds: 30), () => ref.invalidateSelf());
+  // Auto-refresh risk data every 30 seconds
+  final timer = Timer(const Duration(seconds: 30), () {
+    ref.invalidateSelf();
+  });
+  
   ref.onDispose(() => timer.cancel());
 
   return api.getRisk();
-}
+});
 
-@riverpod
-Map<String, bool> circuitBreaker(CircuitBreakerRef ref) {
-  final r = ref.watch(riskProvider).value;
+/// Exposes the circuit breaker flags as a map for the UI.
+final circuitBreakerProvider = Provider<Map<String, bool>>((ref) {
+  final riskAsync = ref.watch(riskProvider);
+  final r = riskAsync.value;
   if (r == null) return {};
   
   return {
@@ -26,10 +29,10 @@ Map<String, bool> circuitBreaker(CircuitBreakerRef ref) {
     'Weekly Review': r.weeklyReview,
     'Correlated Exposure': r.correlatedExposure,
   };
-}
+});
 
-@riverpod
-bool anyHaltActive(AnyHaltActiveRef ref) {
+/// Returns true if any circuit breaker is currently active.
+final anyHaltActiveProvider = Provider<bool>((ref) {
   final breakers = ref.watch(circuitBreakerProvider);
   return breakers.values.any((halted) => halted);
-}
+});

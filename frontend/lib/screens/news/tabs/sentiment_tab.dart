@@ -6,6 +6,7 @@ import '../../../state/providers.dart';
 import '../../../theme/colors.dart';
 import '../../../theme/spacing.dart';
 import '../widgets/calendar_section.dart';
+import '../../../widgets/sentiment_bar.dart';
 
 class SentimentTab extends ConsumerStatefulWidget {
   const SentimentTab({super.key});
@@ -84,47 +85,19 @@ class _SentimentTabState extends ConsumerState<SentimentTab> {
     final trendColor = c.trend == 'improving' ? AppColors.buyGreen : (c.trend == 'deteriorating' ? AppColors.sellRed : Colors.grey);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
           SizedBox(width: 40, child: Text(c.currency, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Icon(trendIcon, size: 14, color: trendColor),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  height: 12,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    gradient: LinearGradient(
-                      colors: [AppColors.sellRed, Colors.grey.shade800, AppColors.buyGreen],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double pos = (c.score4h + 1) / 2 * constraints.maxWidth;
-                    return Positioned(
-                      left: pos.clamp(0, constraints.maxWidth - 4),
-                      child: Container(
-                        width: 4,
-                        height: 16,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
-                      ),
-                    );
-                  }
-                ),
-              ],
-            ),
+            child: SentimentBar(score: c.score4h),
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text("4H: ${c.score4h.toStringAsFixed(2)}", style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
               Text("24H: ${c.score24h.toStringAsFixed(2)}", style: const TextStyle(fontSize: 8, color: AppColors.textMuted)),
             ],
           ),

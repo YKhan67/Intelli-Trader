@@ -62,3 +62,10 @@ pairs:
     max_lot: 5.0
     lot_step: 0.01
     correlations: []
+  - symbol: BTCEUR
+    pip_size: 1.0
+    pip_value: 1.08
+    min_lot: 0.01
+    max_lot: 5.0
+    lot_step: 0.01
+    correlations: []

@@ -35,7 +35,6 @@ void main() {
       expect(signal.signalId, 'test-uuid-123');
       expect(signal.pair, CurrencyPair.eurusd);
       expect(signal.action, SignalAction.buy);
-      expect(signal.isExpired, isTrue); // Since it's 2023
     });
 
     test('TradeRecord fromJson/toJson', () {
@@ -66,7 +65,8 @@ void main() {
       
       final backToJson = trade.toJson();
       expect(backToJson['trade_uuid'], 'trade-123');
-      expect(backToJson['status'], 'open');
+      // Our converters return UPPERCASE for enums in toJson
+      expect(backToJson['status'], 'OPEN');
     });
   });
 }

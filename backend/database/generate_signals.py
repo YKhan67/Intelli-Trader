@@ -20,7 +20,7 @@ async def run_signals_only():
     print("="*50)
     
     engine = get_engine()
-    pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
+    pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD", "BTCEUR"]
     timeframes = ["M15", "H1", "H4"]
 
     print(f"\nStarting AI Pipeline for {len(pairs)} pairs...")

@@ -3,7 +3,7 @@ price_data:
   # Path to your existing histdata.com ZIP files
   historical_zip_path: "D:/prj/ForexDataDL/downloads"
   local_data_path: "backend/data/raw/prices"
-  pairs: ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "NZDUSD", "USDCAD", "XAUUSD", "BTCUSD"]
+  pairs: ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "NZDUSD", "USDCAD", "XAUUSD", "BTCUSD", "BTCEUR"]
   timeframes: ["M1", "M5", "M15", "M30", "H1", "H4"]
   days_history: 30  # Start with 30 days, then increase to 365 or 730
 

@@ -258,12 +258,11 @@ class BackendService {
         (data) => RiskParams.fromJson(data as Map<String, dynamic>),
       );
 
-  Future<void> postSettings(TradingMode mode, List<CurrencyPair> pairs, Map<String, double> risk) => _handleRequest(
+  Future<void> postSettings(TradingMode mode, List<CurrencyPair> pairs, Map<String, dynamic> risk) => _handleRequest(
         _dio.post(ApiEndpoints.settings, data: {
           'trading_mode': mode.name,
           'active_pairs': pairs.map((e) => e.name).toList(),
-          'min_rr_ratio': risk['min_rr_ratio'],
-          'max_risk_per_trade': risk['max_risk_per_trade'],
+          ...risk,
         }),
         (data) => null,
       );

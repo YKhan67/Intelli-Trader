@@ -24,7 +24,7 @@ async def scanner_alias(timeframe: str = "H1"):
 async def get_all_signals(timeframe: str = "H1"):
     try:
         redis = get_redis_client()
-        pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
+        pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD", "BTCEUR"]
         signals = []
         for p in pairs:
             sig = await redis.get(f"signal:{p}:{timeframe}")
@@ -96,7 +96,7 @@ async def get_all_sentiment():
             except:
                 currency_map[c] = {"currency": c, "score_4h": 0.0, "score_24h": 0.0, "trend": "stable"}
         
-        pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
+        pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD", "BTCEUR"]
         pair_rankings = []
         for p in pairs:
             try:

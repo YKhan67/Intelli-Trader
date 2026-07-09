@@ -9,6 +9,7 @@ import '../../widgets/open_trades_panel.dart';
 import '../../widgets/daily_summary.dart';
 import '../../widgets/circuit_breaker_panel.dart';
 import '../../widgets/news_ticker.dart';
+import '../../widgets/veto_log_panel.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -78,6 +79,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     const EngineControlPanel(),
+                    const VetoLogPanel(),
                     const CircuitBreakerPanel(),
                     const _SectionHeader(title: "ACTIVE SIGNALS"),
                     const SignalsGrid(),

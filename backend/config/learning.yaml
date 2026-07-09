@@ -1,40 +1,18 @@
-backtesting:
-  slippage_pips:
-    M5: 2.0
-    M15: 1.5
-    M30: 1.0
-    H1: 0.5
-    H4: 0.3
-  commission_per_lot_round_trip: 7.0
-  walk_forward:
-    train_years: 3
-    validate_years: 1
-    test_years: 1
-    roll_days: 90
-  monte_carlo:
-    simulations: 1000
-    confidence_level: 0.95
-  decay_threshold: 0.40
-  decay_window_days: 30
-  recommendation_thresholds:
-    min_win_rate: 0.45
-    max_drawdown: 15.0
-    min_sharpe: 1.0
-
 learner:
-  retrain_window_days: 90
-  paper_eval_days: 7
-  promotion_thresholds:
-    min_sharpe: 1.5
-    min_win_rate: 0.45
-    max_drawdown: 15.0
-  emergency_thresholds:
-    min_sharpe: 1.0
-    min_regime_accuracy: 0.60
-    min_strategy_winrate: 0.35
+  # Window for training (3650 = 10 Years)
+  retrain_window_days: 3650
+  min_retrain_accuracy: 0.62
+  
+  # Model Hyperparameters for large datasets
+  regime:
+    n_estimators: 200
+    max_depth: 10
+  
+  strategy:
+    learning_rate: 0.05
+    max_depth: 6
+    n_estimators: 500
+
   anomaly:
-    profile_window_days: 90
-    std_dev_threshold: 3.0
-    indicator_count_threshold: 3
     risk_multiplier: 0.25
-    min_confidence: 0.85
+    sensitivity: 0.95

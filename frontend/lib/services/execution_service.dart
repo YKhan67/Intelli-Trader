@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:forex_ai_frontend/models/models.dart';
 import 'package:forex_ai_frontend/state/engine_provider.dart';
 import 'package:forex_ai_frontend/state/connection_provider.dart';
-import 'package:forex_ai_frontend/state/services_provider.dart';
+import 'package:forex_ai_frontend/state/core_services.dart';
 import 'package:forex_ai_frontend/utils/logger.dart';
 
 /// The most critical service in the ForexAI ecosystem.
@@ -12,7 +13,7 @@ class ExecutionService {
   final Ref _ref;
   StreamSubscription? _signalSubscription;
   
-  // Safety Registry: Prevent duplicate orders for the same signal
+  // Persistent Safety Registry: Prevent duplicate orders for the same signal
   final Set<String> _processedSignalIds = {};
   
   // Rate Limiting: Prevent more than one order per pair every 2 minutes
@@ -20,13 +21,42 @@ class ExecutionService {
 
   ExecutionService(this._ref);
 
-  void start() {
+  Future<void> start() async {
     logger.i("INSTITUTIONAL EXECUTION SERVICE: ONLINE");
+    
+    // Load persisted signal IDs to prevent duplicate entries after app restart
+    await _loadProcessedIds();
     
     final wsService = _ref.read(webSocketServiceProvider);
     _signalSubscription = wsService.signalStream.listen((signal) {
       processSignal(signal);
     });
+  }
+
+  Future<void> _loadProcessedIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList('processed_signal_ids') ?? [];
+      _processedSignalIds.addAll(ids);
+      logger.d("Loaded ${_processedSignalIds.length} processed signal IDs from storage");
+    } catch (e) {
+      logger.e("Failed to load signal registry: $e");
+    }
+  }
+
+  Future<void> _persistSignalId(String id) async {
+    _processedSignalIds.add(id);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Keep only the last 100 IDs to avoid slowing down SharedPreferences
+      final listToSave = _processedSignalIds.toList();
+      if (listToSave.length > 100) {
+        listToSave.removeRange(0, listToSave.length - 100);
+      }
+      await prefs.setStringList('processed_signal_ids', listToSave);
+    } catch (e) {
+      logger.e("Failed to persist signal registry: $e");
+    }
   }
 
   Future<void> processSignal(BackendSignal signal) async {
@@ -36,19 +66,18 @@ class ExecutionService {
     final isRunning = _ref.read(engineStateProvider);
     if (!isRunning) return;
 
-    // 2. CONNECTION STATUS CHECK (Safety Pause)
+    // 2. CONNECTION STATUS CHECK
     final backendConn = _ref.read(backendConnectionProvider);
     final brokerConn = _ref.read(brokerConnectionProvider);
     
     if (backendConn.status != ConnectionStatus.connected || 
         brokerConn.status != ConnectionStatus.connected) {
-      logger.w("EXECUTION PAUSED [$pairName]: System disconnected (Backend: ${backendConn.status}, Broker: ${brokerConn.status})");
+      logger.w("EXECUTION PAUSED [$pairName]: System disconnected");
       return;
     }
 
-    // 3. DUPLICATE PROTECTION
+    // 3. PERSISTENT DUPLICATE PROTECTION
     if (_processedSignalIds.contains(signal.signalId)) {
-      logger.d("EXECUTION BLOCKED [$pairName]: Duplicate signal ID ${signal.signalId}");
       return;
     }
 
@@ -57,17 +86,17 @@ class ExecutionService {
       return;
     }
 
-    // 5. RATE LIMITING (Institutional Safety)
+    // 5. RATE LIMITING
     final now = DateTime.now();
     if (_lastOrderTime.containsKey(signal.pair)) {
       final diff = now.difference(_lastOrderTime[signal.pair]!);
-      if (diff < const Duration(minutes: 2)) {
-        logger.w("EXECUTION BLOCKED [$pairName]: Rate limit active (${diff.inSeconds}s since last order)");
+      if (diff < const Duration(minutes: 5)) { // Extended to 5m for institutional safety
+        logger.w("EXECUTION BLOCKED [$pairName]: Cooling down (${diff.inSeconds}s since last order)");
         return;
       }
     }
 
-    // 6. VALIDITY & EXPIRATION CHECK
+    // 6. VALIDITY & EXPIRATION
     if (!signal.isValid || signal.isExpired) {
       logger.w("EXECUTION BLOCKED [$pairName]: Signal invalid or expired");
       return;
@@ -76,27 +105,27 @@ class ExecutionService {
     // 7. BROKER SERVICE VERIFICATION
     final brokerService = _ref.read(brokerServiceProvider);
     if (brokerService.activeBroker == null) {
-      logger.e("EXECUTION FAILED [$pairName]: No active broker instance");
+      logger.e("EXECUTION FAILED [$pairName]: No active broker");
       return;
     }
 
-    // 8. PRE-TRADE ACCOUNT VALIDATION
+    // 8. PRE-TRADE ACCOUNT VALIDATION (Real MT5 Balance Check)
     try {
       final account = await brokerService.activeBroker!.getAccountInfo();
-      if (account.marginLevel < 100.0) {
-        logger.e("EXECUTION BLOCKED [$pairName]: Insufficient Margin Level (${account.marginLevel}%)");
+      if (account.marginLevel < 200.0) { // Raised to 200% for institutional grade
+        logger.e("EXECUTION BLOCKED [$pairName]: Low Margin Level (${account.marginLevel}%)");
         return;
       }
     } catch (e) {
-      logger.w("EXECUTION WARNING [$pairName]: Could not verify account margin, proceeding with caution...");
+      logger.w("EXECUTION WARNING [$pairName]: Margin check failed, proceeding...");
     }
 
     // --- EXECUTION PHASE ---
     try {
-      _processedSignalIds.add(signal.signalId);
+      await _persistSignalId(signal.signalId);
       _lastOrderTime[signal.pair] = now;
       
-      logger.i(">>> INITIATING ORDER: $pairName | ${signal.action.name.toUpperCase()} | Lots: ${signal.lotSize}");
+      logger.i(">>> INITIATING INSTITUTIONAL ORDER: $pairName | ${signal.action.name.toUpperCase()} | Lots: ${signal.lotSize}");
       
       final direction = signal.action == SignalAction.buy ? Direction.long : Direction.short;
 
@@ -111,12 +140,9 @@ class ExecutionService {
       logger.i("ORDER SUCCESSFUL [$pairName]: Ticket ID $ticketId");
       
       _ref.read(notificationServiceProvider).showTradeNotification(
-        title: "Trade Executed",
-        body: "${signal.action.name.toUpperCase()} $pairName @ ${signal.entryPrice}",
+        title: "Institutional Entry: ${signal.pair.displayName}",
+        body: "${signal.action.name.toUpperCase()} executed @ ${signal.entryPrice}",
       );
-
-      // Maintain registry size
-      if (_processedSignalIds.length > 500) _processedSignalIds.clear();
 
     } catch (e) {
       logger.e("CRITICAL EXECUTION ERROR [$pairName]: $e");

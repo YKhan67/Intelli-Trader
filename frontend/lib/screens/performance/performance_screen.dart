@@ -78,6 +78,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
   }
 
   Widget _buildContent(PerformanceMetrics perf) {
+    // LOGICAL FIX: Graceful Empty State handling.
+    // If no trades exist, show a professional 'Empty State' UI.
+    final bool isEmpty = (perf.metrics['total_trades'] ?? 0) == 0;
+
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(performanceProvider);
@@ -90,16 +94,43 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
           children: [
             _buildMetricsGrid(perf.metrics),
             const SizedBox(height: AppSpacing.lg),
-            _buildEquityCurve(perf),
-            const SizedBox(height: AppSpacing.lg),
-            _buildStrategyTable(perf.strategyBreakdown),
-            const SizedBox(height: AppSpacing.lg),
-            _buildMonthlyReturns(perf.monthlyReturns),
-            const SizedBox(height: AppSpacing.lg),
-            _buildSessionChart(perf.sessionPerformance),
-            const SizedBox(height: AppSpacing.lg),
-            _buildTopBottomTrades(perf),
+            if (isEmpty) 
+              _buildEmptyStatePlaceholder()
+            else ...[
+              _buildEquityCurve(perf),
+              const SizedBox(height: AppSpacing.lg),
+              _buildStrategyTable(perf.strategyBreakdown),
+              const SizedBox(height: AppSpacing.lg),
+              _buildMonthlyReturns(perf.monthlyReturns),
+              const SizedBox(height: AppSpacing.lg),
+              _buildSessionChart(perf.sessionPerformance),
+              const SizedBox(height: AppSpacing.lg),
+              _buildTopBottomTrades(perf),
+            ],
             const SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyStatePlaceholder() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: Column(
+          children: [
+            Icon(Icons.query_stats, size: 64, color: AppColors.textMuted.withOpacity(0.3)),
+            const SizedBox(height: 16),
+            const Text(
+              "AWAITING INSTITUTIONAL DATA",
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.5),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "No closed trades recorded for this period yet.",
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -116,8 +147,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-      childAspectRatio: 1.5,
+      crossAxisCount: MediaQuery.of(context).size.width > 900 ? 6 : 3,
+      childAspectRatio: 2.2,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       children: [
@@ -129,17 +160,17 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
         ),
         MetricCard(
           label: "Sharpe Ratio",
-          value: "${m['sharpe_ratio'] ?? '1.85'}",
+          value: "${m['sharpe_ratio'] ?? '0.00'}",
           icon: Icons.analytics,
         ),
         MetricCard(
           label: "Win Rate",
-          value: "${winRate.toStringAsFixed(2)}%",
+          value: "${winRate.toStringAsFixed(1)}%",
           valueColor: winRate >= 50 ? AppColors.buyGreen : Colors.orange,
         ),
         MetricCard(
           label: "Max DD",
-          value: "-${maxDd.toStringAsFixed(2)}%",
+          value: "-${maxDd.toStringAsFixed(1)}%",
           valueColor: AppColors.sellRed,
         ),
         MetricCard(
@@ -157,9 +188,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
 
   Widget _buildEquityCurve(PerformanceMetrics perf) {
     final spots = perf.equityCurve.asMap().entries.map((e) {
-      final balance = (e.value['balance'] ?? 10000.0) as num;
+      final balance = (e.value['balance'] ?? 0.0) as num;
       return FlSpot(e.key.toDouble(), balance.toDouble());
     }).toList();
+
+    if (spots.isEmpty) return const SizedBox.shrink();
 
     return Card(
       child: Padding(
@@ -167,38 +200,27 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Equity Curve", style: TextStyle(fontWeight: FontWeight.bold)),
-                Switch(
-                  value: _showPercent,
-                  onChanged: (v) => setState(() => _showPercent = v),
-                ),
-              ],
-            ),
+            const Text("Equity Curve", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
-              child: spots.length < 2 
-                ? const Center(child: Text("Not enough trade data for chart", style: TextStyle(color: Colors.grey, fontSize: 10)))
-                : LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: false),
-                      titlesData: const FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: spots,
-                          isCurved: true,
-                          color: AppColors.accentBlue,
-                          barWidth: 2,
-                          dotData: const FlDotData(show: false),
-                          belowBarData: BarAreaData(show: true, color: AppColors.accentBlue.withOpacity(0.1)),
-                        ),
-                      ],
+              child: LineChart(
+                LineChartData(
+                  gridData: const FlGridData(show: false),
+                  titlesData: const FlTitlesData(show: false),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: AppColors.accentBlue,
+                      barWidth: 2,
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(show: true, color: AppColors.accentBlue.withOpacity(0.1)),
                     ),
-                  ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -252,8 +274,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
   }
 
   Widget _buildMonthlyReturns(Map<String, double> returns) {
-    // Determine which year to show. Default to current year, 
-    // but allowing for historical views if the data dictates it.
     final int displayYear = DateTime.now().year;
 
     return Card(
@@ -274,8 +294,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4, // More readable on smaller screens
-                childAspectRatio: 1.4,
+                crossAxisCount: 6,
+                childAspectRatio: 2.2,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
               ),
@@ -292,35 +312,19 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
                 else if (val < -1000) color = AppColors.sellRed.withOpacity(0.8);
                 else if (val < 0) color = AppColors.sellRed.withOpacity(0.4);
 
-                return InkWell(
-                  onTap: () {
-                    final start = DateTime(displayYear, monthNum, 1);
-                    final end = DateTime(displayYear, monthNum + 1, 0);
-                    
-                    ref.read(tradeHistoryFilterProvider.notifier).state = 
-                      TradeFilters(dateRange: DateTimeRange(start: start, end: end));
-                    context.go('/history');
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: color, 
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          DateFormat('MMM').format(monthDate).toUpperCase(), 
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
-                        ),
-                        if (val != 0) 
-                          Text(
-                            "${val > 0 ? '+' : ''}${val.toStringAsFixed(0)}", 
-                            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
-                          ),
-                      ],
-                    ),
+                return Container(
+                  decoration: BoxDecoration(
+                    color: color, 
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(DateFormat('MMM').format(monthDate).toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+                      if (val != 0) 
+                        Text("${val > 0 ? '+' : ''}${val.toStringAsFixed(0)}", style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                    ],
                   ),
                 );
               },
@@ -363,8 +367,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> with Sing
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: 5000,
-                  minY: -5000,
                   gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(

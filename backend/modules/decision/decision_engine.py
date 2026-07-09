@@ -5,6 +5,7 @@ import logging
 import uuid
 import json
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from typing import Dict, Any, Optional
 
 from backend.modules.models import (
@@ -13,7 +14,8 @@ from backend.modules.models import (
     SignalAction, 
     Strategy, 
     Session,
-    Timeframe
+    Timeframe,
+    Direction
 )
 from backend.database.redis_client import get_redis_client
 
@@ -27,12 +29,39 @@ from backend.modules.learner import AnomalyDetector
 from .signal_generator import SignalGenerator
 from .confidence_aggregator import ConfidenceAggregator
 from .validation import SignalValidator
+from .immune_gate import ImmuneGate
 
 from backend.modules.learner.model_versioner import ModelVersioner
 
 logger = logging.getLogger("DecisionEngine")
 
+log_dir = Path(__file__).resolve().parents[2] / "logs"
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / "decision_engine.log"
+
+file_handler = logging.FileHandler(log_file, encoding="utf-8")
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+
+# Remove stale file handlers from earlier runs so the logger writes to the current path.
+for handler in list(logger.handlers):
+    if isinstance(handler, logging.FileHandler):
+        logger.removeHandler(handler)
+        handler.close()
+
+logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
+logger.propagate = True
+
 class DecisionEngine:
+    @staticmethod
+    def _map_signal_to_risk_direction(raw_action: SignalAction) -> Direction:
+        if raw_action == SignalAction.BUY:
+            return Direction.LONG
+        if raw_action == SignalAction.SELL:
+            return Direction.SHORT
+        return Direction.NEUTRAL
+
     def __init__(self):
         config_path = os.path.join(os.path.dirname(__file__), "../../config/trading.yaml")
         with open(config_path, "r") as f:
@@ -48,6 +77,7 @@ class DecisionEngine:
         self.confidence_aggregator = ConfidenceAggregator(self.config)
         self.validator = SignalValidator()
         self.anomaly_detector = AnomalyDetector(self.config)
+        self.immune_gate = ImmuneGate()
         
         self.redis = get_redis_client()
         self._current_versions = {}
@@ -73,16 +103,20 @@ class DecisionEngine:
         Orchestrates the full decision pipeline for one pair.
         """
         start_time = asyncio.get_event_loop().time()
-        is_backtest = trading_mode == "backtest"
         
         try:
             current_ts = df.index[-1]
             if 'close' not in indicators:
                 indicators['close'] = df['close'].iloc[-1]
             
-            # Safety: Ensure ATR exists for risk management
-            if 'atr_14' not in indicators or indicators['atr_14'] is None:
-                indicators['atr_14'] = 0.0020 if "JPY" not in pair else 0.20
+            # LOGICAL FIX 3: Scale-Aware ATR Fallbacks
+            # Prevents microscopic R:R (0.01) if indicators are briefly missing
+            if 'atr_14' not in indicators or (indicators['atr_14'] or 0) < 0.0001:
+                p_up = pair.upper()
+                if "BTC" in p_up: indicators['atr_14'] = 50.0
+                elif "XAU" in p_up or "GOLD" in p_up: indicators['atr_14'] = 2.5
+                elif "JPY" in p_up: indicators['atr_14'] = 0.25
+                else: indicators['atr_14'] = 0.0020
 
             # 1. Pipeline Analysis
             is_anomalous = await self.anomaly_detector.check_anomaly(indicators, pair)
@@ -116,26 +150,21 @@ class DecisionEngine:
 
             sentiment_res = await self.sentiment_manager.get_sentiment(pair)
             
-            risk_params = await self.risk_manager.calculate(
-                pair=pair, direction=SignalAction.HOLD, strategy=strategy_decision.strategy,
-                timeframe=tf_selection.selected_timeframe, account_balance=account_balance,
-                open_trades=open_trades, trading_mode=trading_mode, indicators=indicators
-            )
-
             raw_action, raw_reason = self.signal_gen.generate_raw_signal(
                 regime_res=regime_res, strategy_res=strategy_decision,
                 sentiment_res=sentiment_res, indicators=indicators,
                 active_zones=active_zones, trading_mode=trading_mode
             )
-            
-            if raw_action != SignalAction.HOLD:
-                risk_params = await self.risk_manager.calculate(
-                    pair=pair, direction=raw_action, strategy=strategy_decision.strategy,
-                    timeframe=tf_selection.selected_timeframe, account_balance=account_balance,
-                    open_trades=open_trades, trading_mode=trading_mode, indicators=indicators
-                )
 
-            # Fix: Handle both Enum and String for selected_timeframe
+            # Risk Calculation
+            risk_direction = self._map_signal_to_risk_direction(raw_action)
+            risk_params = await self.risk_manager.calculate(
+                pair=pair, direction=risk_direction, strategy=strategy_decision.strategy,
+                timeframe=tf_selection.selected_timeframe, account_balance=account_balance,
+                open_trades=open_trades, trading_mode=trading_mode, indicators=indicators
+            )
+
+            # Final confidence
             tf_key = str(tf_selection.selected_timeframe)
             if hasattr(tf_selection.selected_timeframe, 'value'):
                 tf_key = tf_selection.selected_timeframe.value
@@ -152,6 +181,18 @@ class DecisionEngine:
                 sentiment_res=sentiment_res, risk_params=risk_params, is_duplicate=is_dup
             )
 
+            # Immune system check
+            immune_blocked = False
+            risk_scale = 1.0
+            if raw_action != SignalAction.HOLD:
+                immune_blocked, risk_scale, immune_reason = await self.immune_gate.check_immunity(pair, indicators)
+                if immune_blocked:
+                    validation_passed = False
+                    failed_checks.append("IMMUNE_VETO")
+                    raw_reason += f" [VETO: {immune_reason}]"
+                elif risk_scale < 1.0:
+                    raw_reason += f" [RISK_REDUCED: {immune_reason}]"
+
             min_conf = self.config.get('minimum_signal_confidence', 0.70)
             if is_anomalous: min_conf = 0.85
             final_action = raw_action if validation_passed and final_conf >= min_conf else SignalAction.HOLD
@@ -160,11 +201,34 @@ class DecisionEngine:
             if failed_checks:
                 reason += f"Blocks: {', '.join(failed_checks)}"
 
-            # 3. Assemble Signal
-            # For Pydantic gt=0 fields, ensure we pass None instead of 0.0 if HOLD
+            if final_action == SignalAction.HOLD:
+                lot_size = getattr(risk_params, 'lot_size', None)
+                atr_used = getattr(risk_params, 'atr_used', None)
+                spread_pips = indicators.get('spread_pips', None)
+                rr_ratio = getattr(risk_params, 'rr_ratio', None)
+
+                logger.info(
+                    "HOLD_DECISION | pair=%s | raw_action=%s | final_conf=%.4f | min_conf=%.2f | validation_passed=%s | failed_checks=%s | raw_reason=%s | lot_size=%s | atr=%.6f | spread_pips=%.4f | rr=%.4f",
+                    pair,
+                    raw_action.name if hasattr(raw_action, 'name') else raw_action,
+                    final_conf,
+                    min_conf,
+                    validation_passed,
+                    failed_checks,
+                    raw_reason,
+                    lot_size,
+                    atr_used if atr_used is not None else 0.0,
+                    spread_pips if spread_pips is not None else 0.0,
+                    rr_ratio if rr_ratio is not None else 0.0,
+                )
+
+            # Assemble Result
             sl_price = risk_params.stop_loss_price if final_action != SignalAction.HOLD else None
             tp_price = risk_params.take_profit_price if final_action != SignalAction.HOLD else None
             l_size = risk_params.lot_size if final_action != SignalAction.HOLD else None
+            if not immune_blocked and l_size:
+                 l_size *= risk_scale
+
             e_price = indicators.get('close') if indicators.get('close', 0) > 0 else None
 
             trade_decision = TradeDecision(
@@ -194,8 +258,6 @@ class DecisionEngine:
                 signal_json = signal.model_dump_json()
                 await self.redis.set(cache_key, signal_json, ex=7200)
                 await self.redis.set(f"signal:{pair}:latest", signal_json)
-                
-                # PUBLISH to WebSocket channel
                 await self.redis.publish(f"channel:signals:{pair}", signal_json)
             except: pass
 

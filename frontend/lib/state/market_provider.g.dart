@@ -849,6 +849,24 @@ class _SentimentProviderElement
   CurrencyPair get pair => (origin as SentimentProvider).pair;
 }
 
+String _$immunityLogsHash() => r'510d48e29c8ed8f9c523597398493ab47b79b4c0';
+
+/// See also [immunityLogs].
+@ProviderFor(immunityLogs)
+final immunityLogsProvider =
+    AutoDisposeFutureProvider<List<Map<String, dynamic>>>.internal(
+  immunityLogs,
+  name: r'immunityLogsProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$immunityLogsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ImmunityLogsRef
+    = AutoDisposeFutureProviderRef<List<Map<String, dynamic>>>;
 String _$cotPositionsHash() => r'cf8fe3af633e3ad39403caa114b6585c5f29a070';
 
 /// See also [cotPositions].

@@ -5,6 +5,8 @@ import '../../../models/models.dart';
 import '../../../state/providers.dart';
 import '../../../theme/colors.dart';
 import '../../../theme/spacing.dart';
+import '../../../widgets/confidence_ring.dart';
+import '../../../widgets/regime_badge.dart';
 
 class SignalTab extends ConsumerStatefulWidget {
   final CurrencyPair pair;
@@ -118,25 +120,30 @@ class _SignalTabState extends ConsumerState<SignalTab> {
           ),
         ),
         const SizedBox(width: AppSpacing.md),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "${(signal.confidence * 100).toInt()}% Confidence",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              "Strategy: ${signal.strategy.displayName}",
-              style: const TextStyle(color: AppColors.textMuted),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Strategy: ${signal.strategy.displayName}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  ConfidenceRing(confidence: signal.confidence, size: 44),
+                ],
+              ),
+              const SizedBox(height: 8),
+              RegimeBadge(regime: signal.regime),
+            ],
+          ),
         ),
       ],
     );
   }
 
   Widget _buildRiskRewardVisualizer(BackendSignal signal) {
-    // Simplified R/R diagram
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -170,7 +177,7 @@ class _SignalTabState extends ConsumerState<SignalTab> {
       crossAxisCount: 2,
       childAspectRatio: 3,
       children: [
-        _buildDetailItem("LOT SIZE", signal.lotSize.toString()),
+        _buildDetailItem("LOT SIZE", signal.lotSize?.toString() ?? "0.01"),
         _buildDetailItem("TIMEFRAME", signal.timeframe.name.toUpperCase()),
         _buildDetailItem("SESSION", signal.session.name.toUpperCase()),
         _buildDetailItem("RISK SCORE", signal.riskScore.toStringAsFixed(2)),

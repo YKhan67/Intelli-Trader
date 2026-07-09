@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, Foreig
 from sqlalchemy.orm import relationship
 from .postgres import Base
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 class CurrencyPairDB(Base):
     __tablename__ = "currency_pairs"
@@ -171,6 +171,17 @@ class ModelVersionDB(Base):
     status = Column(String(20))
     trained_at = Column(DateTime, default=datetime.utcnow)
     metrics = Column(JSON)
+
+class ModelFeedbackDB(Base):
+    __tablename__ = "model_feedback"
+    id = Column(SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pair_id = Column(Integer, ForeignKey("currency_pairs.id"), nullable=False)
+    strategy = Column(String(50), nullable=False)
+    indicator_dna = Column(JSON, nullable=False) # Snapshot of RSI, MACD, etc.
+    failure_context = Column(String(100)) # e.g., "BULL_TRAP"
+    severity = Column(Float, default=1.0)
+    detected_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime(timezone=True)) # 48h limit
 
 class DataDownloadLogDB(Base):
     __tablename__ = "data_download_log"

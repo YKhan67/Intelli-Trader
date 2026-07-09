@@ -32,6 +32,12 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
   }
 
   @override
+  bool get isInitialized => (super.noSuchMethod(
+        Invocation.getter(#isInitialized),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i3.Future<void> init() => (super.noSuchMethod(
         Invocation.method(
           #init,

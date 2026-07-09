@@ -24,104 +24,114 @@ class WebSocketService {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   String? _lastBaseUrl;
-  String? _lastPair;
 
-  void connect(String baseUrl, String pair) {
-    _lastBaseUrl = baseUrl;
-    _lastPair = pair;
+  void connect(String baseUrl, [String? _]) {
+    // LOGICAL FIX 2: Explicit IPv4 to bypass Windows DNS/IPv6 resolution lag
+    // We force 127.0.0.1 if localhost is provided
+    String fixedUrl = baseUrl.replaceAll('localhost', '127.0.0.1');
+    _lastBaseUrl = fixedUrl;
     
-    final wsBaseUrl = baseUrl.replaceFirst('http', 'ws');
-    _connectSignals(wsBaseUrl, pair);
+    final wsBaseUrl = fixedUrl.replaceFirst('http', 'ws');
+    _cleanupChannels();
+    _connectGlobalBridge(wsBaseUrl);
     _connectAlerts(wsBaseUrl);
   }
 
-  void _connectSignals(String wsBaseUrl, String pair) {
-    final url = '$wsBaseUrl${ApiEndpoints.liveWebSocket}/$pair';
-    logger.i('Connecting to Signal WebSocket: $url');
+  void _cleanupChannels() {
+    _signalChannel?.sink.close();
+    _alertChannel?.sink.close();
+    _signalChannel = null;
+    _alertChannel = null;
+  }
+
+  void _connectGlobalBridge(String wsBaseUrl) {
+    // LOGICAL FIX 3: Connect to the Global Bridge instead of individual pairs
+    final url = '$wsBaseUrl/live/all';
+    logger.i('Connecting to Global Communication Bridge: $url');
     
     try {
       _signalChannel = WebSocketChannel.connect(Uri.parse(url));
       _signalChannel!.stream.listen(
         (data) {
           _setConnected(true);
-          _onSignalMessage(data);
+          _onBridgeMessage(data);
+          _reconnectAttempts = 0;
         },
-        onDone: () => _handleReconnect(),
-        onError: (e) => _handleReconnect(error: e),
+        onDone: () => _handleReconnect(reason: 'Global Bridge Closed'),
+        onError: (e) => _handleReconnect(reason: 'Global Bridge Error: $e'),
+        cancelOnError: true,
       );
-      _reconnectAttempts = 0;
     } catch (e) {
-      _handleReconnect(error: e);
+      _handleReconnect(reason: 'Handshake Failed: $e');
     }
   }
 
   void _connectAlerts(String wsBaseUrl) {
     final url = '$wsBaseUrl${ApiEndpoints.alertsWebSocket}';
-    logger.i('Connecting to Alerts WebSocket: $url');
-    
     try {
       _alertChannel = WebSocketChannel.connect(Uri.parse(url));
       _alertChannel!.stream.listen(
         (data) => _onAlertMessage(data),
-        onDone: () => {},
-        onError: (e) => {},
+        onDone: () {},
+        onError: (e) {},
       );
-    } catch (e) {
-      logger.e('Alert WebSocket connection failed: $e');
-    }
+    } catch (e) {}
   }
 
   void _setConnected(bool val) {
     if (_isConnected != val) {
       _isConnected = val;
       _connectionController.add(val);
+      if (val) logger.i('>>> SYSTEM CONNECTED: COMMUNICATION BRIDGE ONLINE');
     }
   }
 
-  void _onSignalMessage(dynamic data) {
+  void _onBridgeMessage(dynamic data) {
     try {
       final json = jsonDecode(data);
-      if (json['type'] == 'ping') return;
       
-      final signal = BackendSignal.fromJson(json);
-      _signalController.add(signal);
+      // Handle Global Bridge message types
+      if (json['type'] == 'heartbeat') {
+        // Heartbeat received - system is healthy
+        return;
+      }
+      
+      if (json['type'] == 'signal') {
+        final signal = BackendSignal.fromJson(json['data']);
+        _signalController.add(signal);
+      }
     } catch (e) {
-      logger.e('Error parsing WebSocket signal: $e');
+      // Ignore malformed heartbeat or debug packets
     }
   }
 
   void _onAlertMessage(dynamic data) {
     try {
       final json = jsonDecode(data);
-      if (json['type'] == 'ping') return;
-
+      if (json['type'] == 'ping' || json['type'] == 'heartbeat') return;
       final alert = SystemAlert.fromJson(json);
       _alertController.add(alert);
-    } catch (e) {
-      logger.e('Error parsing WebSocket alert: $e');
-    }
+    } catch (e) {}
   }
 
-  void _handleReconnect({dynamic error}) {
+  void _handleReconnect({String? reason}) {
     _setConnected(false);
-    if (error != null) logger.w('WebSocket error: $error');
+    if (reason != null) logger.w('Connection Warning: $reason');
     
     _reconnectAttempts++;
-    final delay = min(pow(2, _reconnectAttempts).toInt(), 30);
-    logger.i('Attempting WebSocket reconnect in ${delay}s...');
+    final delay = min(pow(2, _reconnectAttempts).toInt(), 15);
     
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(seconds: delay), () {
-      if (_lastBaseUrl != null && _lastPair != null) {
-        connect(_lastBaseUrl!, _lastPair!);
+      if (_lastBaseUrl != null) {
+        connect(_lastBaseUrl!);
       }
     });
   }
 
   void dispose() {
     _reconnectTimer?.cancel();
-    _signalChannel?.sink.close();
-    _alertChannel?.sink.close();
+    _cleanupChannels();
     _signalController.close();
     _alertController.close();
     _connectionController.close();

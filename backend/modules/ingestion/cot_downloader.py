@@ -1,12 +1,15 @@
 import asyncio
 import pandas as pd
 import requests
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any
 from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from backend.database.postgres import AsyncSessionLocal
 from backend.database.models_db import COTDataDB
+
+logger = logging.getLogger("COTDownloader")
 
 class COTDownloader:
     def __init__(self, config: Dict[str, Any]):
@@ -16,13 +19,15 @@ class COTDownloader:
         
         # Mapping of CFTC names to our symbols
         self.mapping = {
-            "EURO FX - CHICAGO MERCANTILE EXCHANGE": "EUR",
-            "BRITISH POUND - CHICAGO MERCANTILE EXCHANGE": "GBP",
-            "JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE": "JPY",
-            "SWISS FRANC - CHICAGO MERCANTILE EXCHANGE": "CHF",
-            "AUSTRALIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE": "AUD",
-            "NZ DOLLAR - CHICAGO MERCANTILE EXCHANGE": "NZD",
-            "CANADIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE": "CAD"
+            "EURO FX": "EUR",
+            "BRITISH POUND STERLING": "GBP",
+            "JAPANESE YEN": "JPY",
+            "SWISS FRANC": "CHF",
+            "AUSTRALIAN DOLLAR": "AUD",
+            "NEW ZEALAND DOLLAR": "NZD",
+            "CANADIAN DOLLAR": "CAD",
+            "BITCOIN": "BTC",
+            "GOLD": "XAU"
         }
 
     async def _get_latest_report_date(self) -> datetime:
@@ -34,61 +39,39 @@ class COTDownloader:
             return latest if latest else datetime(1986, 1, 1, tzinfo=timezone.utc)
 
     async def download_historical(self):
-        print("Starting Optimized COT (Institutional Bias) Sync...")
+        print("Starting Robust COT (Institutional Bias) Sync...")
         
         latest_date = await self._get_latest_report_date()
         print(f"  Latest record in DB: {latest_date.strftime('%Y-%m-%d')}")
 
-        # Optimization 1: Select only required columns (saves 90% bandwidth)
-        columns = [
-            "market_and_exchange_names",
-            "report_date_as_yyyy_mm_dd",
-            "noncomm_positions_long_all",
-            "noncomm_positions_short_all"
-        ]
-        select_str = ",".join(columns)
-
-        # Optimization 2: Filter by Markets AND Date (Incremental sync)
-        market_list = "'" + "','".join(self.mapping.keys()) + "'"
-        where_str = f"market_and_exchange_names IN ({market_list})"
-        if latest_date:
-            # Socrata date format for $where
-            where_str += f" AND report_date_as_yyyy_mm_dd > '{latest_date.isoformat()}'"
-
         all_processed_data = []
-        limit = 1000
-        offset = 0
-
-        # Optimization 3: Pagination (handles any amount of data)
-        while True:
+        
+        for cftc_name, symbol in self.mapping.items():
+            print(f"  Syncing {symbol} ({cftc_name})...")
+            
+            # Socrata SOQL: Date comparison with raw ISO string works best.
+            # Fixed the operator error: removed complex LIKE in favor of strict search
+            where_str = f"report_date_as_yyyy_mm_dd > '{latest_date.strftime('%Y-%m-%dT%H:%M:%S')}'"
+            
             params = {
-                "$select": select_str,
+                "$select": "market_and_exchange_names,report_date_as_yyyy_mm_dd,noncomm_positions_long_all,noncomm_positions_short_all",
                 "$where": where_str,
-                "$limit": limit,
-                "$offset": offset,
-                "$order": "report_date_as_yyyy_mm_dd ASC"
+                "$q": cftc_name, # Use global search instead of LIKE to avoid type errors
+                "$limit": 500
             }
 
             try:
-                print(f"  Fetching batch (Offset: {offset})...")
                 response = requests.get(self.base_url, params=params, timeout=30)
                 if response.status_code == 200:
                     batch_data = response.json()
-                    if not batch_data:
-                        break # No more data
-                    
-                    processed = self._process_api_data(batch_data)
-                    all_processed_data.extend(processed)
-                    
-                    if len(batch_data) < limit:
-                        break # Last page
-                    offset += limit
+                    if batch_data:
+                        processed = self._process_api_data(batch_data, symbol, cftc_name)
+                        all_processed_data.extend(processed)
+                        print(f"    Found {len(processed)} relevant records.")
                 else:
-                    print(f"    API fetch failed (Status {response.status_code}).")
-                    break
+                    print(f"    API Error {response.status_code} for {symbol}")
             except Exception as e:
-                print(f"    Error during API sync: {e}.")
-                break
+                print(f"    Error during COT sync for {symbol}: {e}")
 
         if all_processed_data:
             await self._store_cot_data(all_processed_data)
@@ -96,12 +79,14 @@ class COTDownloader:
         else:
             print("    No new records found. System is up to date.")
 
-    def _process_api_data(self, data: List[Dict]) -> List[Dict]:
+    def _process_api_data(self, data: List[Dict], currency: str, match_key: str) -> List[Dict]:
         results = []
         for item in data:
-            market = item.get('market_and_exchange_names')
-            currency = self.mapping.get(market)
-            
+            # Verify the record is actually the one we want (since $q is a broad search)
+            market_name = item.get('market_and_exchange_names', '').upper()
+            if match_key not in market_name:
+                continue
+
             try:
                 dt_str = item.get('report_date_as_yyyy_mm_dd')
                 dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))

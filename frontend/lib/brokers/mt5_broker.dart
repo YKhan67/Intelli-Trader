@@ -10,16 +10,30 @@ class MT5BrokerConnector implements BrokerInterface {
   WebSocketChannel? _channel;
   bool _connected = false;
   final _tradeUpdateController = StreamController<OpenTrade>.broadcast();
+
+  static String normalizeBridgeUrl(String input) {
+    final value = input.trim();
+    if (value.isEmpty) return 'ws://127.0.0.1:8765';
+
+    final normalized = value.replaceAll('localhost', '127.0.0.1');
+    if (normalized.startsWith('http://')) {
+      return normalized.replaceFirst('http://', 'ws://');
+    }
+    if (normalized.startsWith('https://')) {
+      return normalized.replaceFirst('https://', 'wss://');
+    }
+    return normalized;
+  }
   
   @override
   bool get isConnected => _connected;
 
   @override
-  String get brokerName => "MetaTrader 5";
+  String get brokerName => 'MetaTrader 5';
 
   @override
   Future<bool> connect(Map<String, String> credentials) async {
-    final url = credentials['bridge_url'] ?? 'ws://127.0.0.1:8765';
+    final url = normalizeBridgeUrl(credentials['bridge_url'] ?? 'ws://127.0.0.1:8765');
     logger.i('MT5: Connecting to bridge at $url');
     
     try {
@@ -70,8 +84,8 @@ class MT5BrokerConnector implements BrokerInterface {
       final res = await _sendCommand('GET_POSITIONS', {});
       if (res['status'] != 'success' || res['data'] == null) return [];
       
-      final List positions = res['data'];
-      final List<OpenTrade> trades = [];
+      final positions = res['data'];
+      final trades = <OpenTrade>[];
       
       for (var p in positions) {
         try {

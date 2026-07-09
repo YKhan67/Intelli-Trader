@@ -38,7 +38,7 @@ async def run_real_ingestion():
     
     print("\n[PHASE 3] Generating AI Signals (Vectorized Engine)...")
     engine = get_engine()
-    pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
+    pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD", "BTCEUR"]
     
     for pair in pairs:
         print(f"  Calculating Signals for {pair}...")

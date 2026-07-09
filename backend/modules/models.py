@@ -16,6 +16,7 @@ class CurrencyPair(str, Enum):
     USDCAD = "USDCAD"
     XAUUSD = "XAUUSD"
     BTCUSD = "BTCUSD"
+    BTCEUR = "BTCEUR"
 
 class Timeframe(str, Enum):
     M1 = "M1"

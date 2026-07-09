@@ -4,66 +4,62 @@ from backend.modules.models import Regime
 
 def evaluate_regime_rules(df: pd.DataFrame, indicators: Dict[str, Any], config: Dict[str, Any]) -> Tuple[Regime, float, List[str]]:
     """
-    Evaluates rule-based logic for market regimes with safety checks for None values.
+    LOGICAL FIX: Zero-Fog Regime Rules.
+    Reduces 'UNKNOWN' states by providing clear fallbacks for neutral markets.
     """
     if df is None or df.empty:
         return Regime.UNKNOWN, 0.0, []
 
-    # Critical indicators check - manual loop to avoid built-in shadowing issues if any
     required = ['ema_200', 'adx_14', 'di_plus', 'di_minus', 'rsi_14']
     for k in required:
         if indicators.get(k) is None:
             return Regime.UNKNOWN, 0.0, ["WAITING_FOR_INDICATORS"]
 
-    close = df['close'].iloc[-1]
-    ema_200 = indicators.get('ema_200')
-    adx = indicators.get('adx_14')
-    di_plus = indicators.get('di_plus')
-    di_minus = indicators.get('di_minus')
-    rsi = indicators.get('rsi_14')
+    close = float(df['close'].iloc[-1])
+    ema_200 = float(indicators.get('ema_200'))
+    adx = float(indicators.get('adx_14'))
+    di_plus = float(indicators.get('di_plus'))
+    di_minus = float(indicators.get('di_minus'))
+    rsi = float(indicators.get('rsi_14'))
     bb_upper = indicators.get('bb_upper')
     bb_lower = indicators.get('bb_lower')
-    bb_bandwidth = indicators.get('bb_bandwidth')
     atr = indicators.get('atr_14')
     macd_hist = indicators.get('macd_histogram')
     
     adx_threshold = config.get('adx_threshold', 25)
     agreeing_indicators = []
     
-    # 1. VOLATILE
+    # 1. VOLATILE (Institutional Guard)
     if atr and len(df) > 14:
-        avg_atr = df['high'].iloc[-14:].max() - df['low'].iloc[-14:].min() 
-        if atr > 2.0 * (avg_atr / 14):
-            agreeing_indicators.append("ATR_VOLATILITY")
+        # Measure current ATR against trailing average
+        hist_atr = df['high'].rolling(14).max() - df['low'].rolling(14).min()
+        avg_v = hist_atr.mean()
+        if atr > 2.0 * avg_v:
+            return Regime.VOLATILE, 0.8, ["EXTREME_VOLATILITY"]
             
-    # 2. TRENDING_UP
+    # 2. TRENDING_UP (Strict Institutional)
     if adx > adx_threshold and di_plus > di_minus and close > ema_200:
         agreeing_indicators = ["ADX_HIGH", "DI_PLUS_LEAD", "PRICE_ABOVE_EMA200"]
         if macd_hist and macd_hist > 0: agreeing_indicators.append("MACD_POSITIVE")
-        if rsi and rsi > 50: agreeing_indicators.append("RSI_BULLISH")
         return Regime.TRENDING_UP, 1.0, agreeing_indicators
         
-    # 3. TRENDING_DOWN
+    # 3. TRENDING_DOWN (Strict Institutional)
     if adx > adx_threshold and di_minus > di_plus and close < ema_200:
         agreeing_indicators = ["ADX_HIGH", "DI_MINUS_LEAD", "PRICE_BELOW_EMA200"]
         if macd_hist and macd_hist < 0: agreeing_indicators.append("MACD_NEGATIVE")
-        if rsi and rsi < 50: agreeing_indicators.append("RSI_BEARISH")
         return Regime.TRENDING_DOWN, 1.0, agreeing_indicators
         
-    # 4. RANGING
-    if adx < adx_threshold and rsi and 35 < rsi < 65 and bb_lower is not None and bb_upper is not None and bb_lower < close < bb_upper:
-        agreeing_indicators = ["ADX_LOW", "RSI_NEUTRAL", "BB_INSIDE"]
-        return Regime.RANGING, 0.9, agreeing_indicators
+    # 4. RANGING / CONSOLIDATION (The 'Zero-Fog' Fallback)
+    # If the market isn't trending, it is by definition ranging or reversing.
+    if bb_lower is not None and bb_upper is not None:
+        if bb_lower < close < bb_upper:
+            return Regime.RANGING, 0.9, ["BB_INSIDE", "TREND_ABSENT"]
         
-    # 5. BREAKOUT
-    if bb_bandwidth and bb_bandwidth < config.get('bb_squeeze_threshold', 0.001):
-        agreeing_indicators = ["BB_SQUEEZE"]
-        return Regime.BREAKOUT, 0.8, agreeing_indicators
-
-    # 6. REVERSAL
+    # 5. REVERSAL (Edge Case)
     if bb_upper is not None and bb_lower is not None:
-        if (close >= bb_upper or close <= bb_lower) and macd_hist:
-            agreeing_indicators = ["BB_EXTREME", "MACD_SHRINKING"]
-            return Regime.REVERSAL, 0.7, agreeing_indicators
+        if close >= bb_upper or close <= bb_lower:
+            return Regime.REVERSAL, 0.7, ["BB_EXTREME"]
 
-    return Regime.UNKNOWN, 0.0, []
+    # LOGICAL FIX: Never return UNKNOWN if we have price data. 
+    # Default to RANGING to allow the AI to look for mean-reversion setups.
+    return Regime.RANGING, 0.5, ["DEFAULT_CONSOLIDATION"]

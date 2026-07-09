@@ -1,11 +1,11 @@
 import asyncio
 import logging
+import json
 from typing import List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from backend.database.redis_client import get_redis_client
 
 logger = logging.getLogger("AlertsWS")
-
 router = APIRouter(tags=["websockets"])
 
 class AlertManager:
@@ -17,34 +17,59 @@ class AlertManager:
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        try:
+            self.active_connections.remove(websocket)
+        except: pass
 
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
+    async def safe_send(self, websocket: WebSocket, message: str):
+        try:
+            await websocket.send_text(message)
+            return True
+        except:
+            return False
 
 manager = AlertManager()
 
 @router.websocket("/alerts")
 async def alerts_feed(websocket: WebSocket):
-    await manager.connect(websocket)
+    origin = websocket.headers.get("origin")
+    logger.info(f"Alerts WebSocket Request | Origin: {origin}")
+    
+    try:
+        await manager.connect(websocket)
+    except Exception as e:
+        logger.error(f"Alerts WebSocket Rejected: {e}")
+        return
+
+    logger.info("Accepted alerts feed connection")
     redis = get_redis_client()
     
+    pubsub = None
     try:
         pubsub = redis.pubsub()
         await pubsub.subscribe("channel:alerts")
         
         while True:
             try:
-                message = await asyncio.wait_for(pubsub.get_message(), timeout=30.0)
+                message = await asyncio.wait_for(pubsub.get_message(ignore_subscribe_messages=True), timeout=45.0)
                 if message and message['type'] == 'message':
-                    await websocket.send_text(message['data'])
+                    if not await manager.safe_send(websocket, message['data']):
+                        break
             except asyncio.TimeoutError:
-                await websocket.send_json({"type": "ping"})
+                if not await manager.safe_send(websocket, json.dumps({"type": "ping", "status": "active"})):
+                    break
+            except asyncio.CancelledError:
+                raise
                 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
         logger.info("Client disconnected from alerts feed")
+    except asyncio.CancelledError:
+        pass
     except Exception as e:
-        logger.error(f"Alerts WebSocket error: {e}")
+        logger.error(f"Alerts WebSocket unexpected error: {e}")
+    finally:
         manager.disconnect(websocket)
+        if pubsub:
+            try:
+                await pubsub.unsubscribe("channel:alerts")
+            except: pass

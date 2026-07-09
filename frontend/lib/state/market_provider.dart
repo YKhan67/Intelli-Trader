@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'services_provider.dart';
+import 'core_services.dart';
 import '../models/models.dart';
 
 part 'market_provider.g.dart';
@@ -57,6 +57,13 @@ SentimentResult? sentiment(SentimentRef ref, CurrencyPair pair) {
   final marketData = ref.watch(marketProvider(pair)).value;
   if (marketData == null || marketData['sentiment'] == null) return null;
   return SentimentResult.fromJson(marketData['sentiment']);
+}
+
+@riverpod
+Future<List<Map<String, dynamic>>> immunityLogs(ImmunityLogsRef ref) async {
+  final api = ref.watch(backendServiceProvider);
+  final status = await api.getStatus();
+  return List<Map<String, dynamic>>.from(status['immunity_logs'] ?? []);
 }
 
 @Riverpod(keepAlive: true)

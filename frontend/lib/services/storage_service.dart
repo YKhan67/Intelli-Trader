@@ -5,11 +5,13 @@ import '../models/enums.dart';
 
 class StorageService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  late SharedPreferences _prefs;
+  SharedPreferences? _prefs;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
+
+  bool get isInitialized => _prefs != null;
 
   // Backend Config
   Future<void> saveBackendConfig(String url, String apiKey) async {
@@ -21,7 +23,6 @@ class StorageService {
     final url = await _secureStorage.read(key: 'backend_url');
     final apiKey = await _secureStorage.read(key: 'backend_api_key');
     
-    // RESCUE OVERRIDE: Force Port 8081 if settings are missing or old
     if (url == null || url.contains(":8000")) {
       return {'url': 'http://localhost:8081', 'apiKey': 'dev_key'};
     }
@@ -39,7 +40,6 @@ class StorageService {
     final typeStr = await _secureStorage.read(key: 'broker_type');
     final credsStr = await _secureStorage.read(key: 'broker_credentials');
     
-    // RESCUE OVERRIDE: Force MT5 on 8765 if missing
     if (typeStr == null) {
       return {
         'type': BrokerType.mt5,
@@ -55,22 +55,28 @@ class StorageService {
 
   // Trading Mode
   Future<void> saveTradingMode(TradingMode mode) async {
-    await _prefs.setString('trading_mode', mode.name);
+    await _prefs?.setString('trading_mode', mode.name);
   }
 
   TradingMode getTradingMode() {
-    final modeStr = _prefs.getString('trading_mode');
+    final modeStr = _prefs?.getString('trading_mode');
     return modeStr != null ? TradingMode.values.byName(modeStr) : TradingMode.normal;
   }
 
   // Active Pairs
   Future<void> saveActivePairs(List<CurrencyPair> pairs) async {
-    await _prefs.setStringList('active_pairs', pairs.map((e) => e.name).toList());
+    await _prefs?.setStringList('active_pairs', pairs.map((e) => e.name).toList());
   }
 
   List<CurrencyPair> getActivePairs() {
-    final list = _prefs.getStringList('active_pairs');
-    if (list == null) return [CurrencyPair.eurusd];
+    final list = _prefs?.getStringList('active_pairs');
+    if (list == null) return [
+      CurrencyPair.eurusd, 
+      CurrencyPair.gbpusd, 
+      CurrencyPair.xauusd, 
+      CurrencyPair.btcusd,
+      CurrencyPair.btceur
+    ];
     return list
         .map((e) => CurrencyPair.values.byName(e))
         .where((e) => e != CurrencyPair.unknown)
@@ -79,16 +85,36 @@ class StorageService {
 
   // Engine State
   Future<void> saveEngineState(bool running) async {
-    await _prefs.setBool('engine_running', running);
+    await _prefs?.setBool('engine_running', running);
   }
 
   bool getEngineState() {
-    return _prefs.getBool('engine_running') ?? false;
+    return _prefs?.getBool('engine_running') ?? false;
+  }
+
+  // Pair-Specific Risk Settings
+  Future<void> savePairRisk(Map<String, Map<String, double>> risk) async {
+    await _prefs?.setString('pair_risk_matrix', jsonEncode(risk));
+  }
+
+  Map<String, Map<String, double>> getPairRisk() {
+    final raw = _prefs?.getString('pair_risk_matrix');
+    if (raw == null) return {};
+    
+    final Map<String, dynamic> decoded = jsonDecode(raw);
+    final Map<String, Map<String, double>> result = {};
+    
+    decoded.forEach((pair, settings) {
+      final Map<String, dynamic> s = settings;
+      result[pair] = s.map((key, value) => MapEntry(key, (value as num).toDouble()));
+    });
+    
+    return result;
   }
 
   Future<void> clearAll() async {
     await _secureStorage.deleteAll();
-    await _prefs.clear();
+    await _prefs?.clear();
   }
   
   Future<void> clearApiKey() async {

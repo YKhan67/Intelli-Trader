@@ -6,46 +6,44 @@ import '../state/providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../models/models.dart';
+import 'confidence_ring.dart';
+import 'regime_badge.dart';
+import 'pair_flag.dart';
 
 class SignalsGrid extends ConsumerWidget {
   const SignalsGrid({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rawPairs = ref.watch(activePairsStateProvider);
-    final activePairs = rawPairs.where((p) => p != CurrencyPair.unknown).toList();
-    final signalsAsync = ref.watch(allSignalsProvider);
+    final activePairs = ref.watch(activePairsStateProvider.select(
+      (pairs) => pairs.where((p) => p != CurrencyPair.unknown).toList()
+    ));
     final selectedTf = ref.watch(selectedTimeframeProvider);
+
+    // LOGICAL CALCULATION: 4 Columns per row
+    const int crossAxisCount = 4;
 
     return Column(
       children: [
         _buildTimeframeSelector(ref, selectedTf),
-        const SizedBox(height: AppSpacing.md),
-        signalsAsync.when(
-          data: (signalsMap) => GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 300,
-              childAspectRatio: 1.4,
-              crossAxisSpacing: AppSpacing.md,
-              mainAxisSpacing: AppSpacing.md,
-            ),
-            itemCount: activePairs.length,
-            itemBuilder: (context, index) {
-              final pair = activePairs[index];
-              final signal = signalsMap[pair];
-              return _SignalCard(pair: pair, signal: signal);
-            },
+        const SizedBox(height: AppSpacing.sm),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            // LOGICAL RATIO 2.4: This forces the boxes to be significantly SHORTER
+            // allowing 3-4 rows to fit on a 1080p screen without scrolling.
+            childAspectRatio: 2.4, 
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
           ),
-          loading: () => _buildShimmer(activePairs.length),
-          error: (e, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Text("Signals Load Error: $e", textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            ),
-          ),
+          itemCount: activePairs.length,
+          itemBuilder: (context, index) {
+            final pair = activePairs[index];
+            return _SignalCard(pair: pair);
+          },
         ),
       ],
     );
@@ -53,7 +51,6 @@ class SignalsGrid extends ConsumerWidget {
 
   Widget _buildTimeframeSelector(WidgetRef ref, Timeframe current) {
     final tfs = [Timeframe.m15, Timeframe.m30, Timeframe.h1, Timeframe.h4];
-    
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -80,44 +77,17 @@ class SignalsGrid extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _buildShimmer(int count) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 300,
-        childAspectRatio: 1.4,
-        crossAxisSpacing: AppSpacing.md,
-        mainAxisSpacing: AppSpacing.md,
-      ),
-      itemCount: count > 0 ? count : 4,
-      itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: AppColors.backgroundElevated,
-        highlightColor: AppColors.borderColor,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-class _SignalCard extends StatefulWidget {
+class _SignalCard extends ConsumerStatefulWidget {
   final CurrencyPair pair;
-  final BackendSignal? signal;
-
-  const _SignalCard({required this.pair, this.signal});
+  const _SignalCard({required this.pair});
 
   @override
-  State<_SignalCard> createState() => _SignalCardState();
+  ConsumerState<_SignalCard> createState() => _SignalCardState();
 }
 
-class _SignalCardState extends State<_SignalCard> with SingleTickerProviderStateMixin {
+class _SignalCardState extends ConsumerState<_SignalCard> with SingleTickerProviderStateMixin {
   late AnimationController _flashController;
   late Animation<Color?> _flashAnimation;
   SignalAction? _lastAction;
@@ -127,18 +97,6 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
     super.initState();
     _flashController = AnimationController(duration: const Duration(milliseconds: 600), vsync: this);
     _flashAnimation = ColorTween(begin: Colors.transparent, end: Colors.transparent).animate(_flashController);
-    _lastAction = widget.signal?.action;
-  }
-
-  @override
-  void didUpdateWidget(_SignalCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.signal?.action != _lastAction && widget.signal != null) {
-      final Color color = (widget.signal?.action ?? SignalAction.hold).color.withOpacity(0.3);
-      _flashAnimation = ColorTween(begin: color, end: Colors.transparent).animate(_flashController);
-      _flashController.forward(from: 0);
-      _lastAction = widget.signal!.action;
-    }
   }
 
   @override
@@ -149,20 +107,28 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
 
   @override
   Widget build(BuildContext context) {
-    final signal = widget.signal;
+    final signal = ref.watch(allSignalsProvider.select((map) => map.value?[widget.pair]));
     
+    if (signal != null && signal.action != _lastAction) {
+      final Color color = signal.action.color.withOpacity(0.3);
+      _flashAnimation = ColorTween(begin: color, end: Colors.transparent).animate(_flashController);
+      _flashController.forward(from: 0);
+      _lastAction = signal.action;
+    }
+
     return InkWell(
       onTap: () => context.push('/pair/${widget.pair.name}'),
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+      borderRadius: BorderRadius.circular(8),
       child: AnimatedBuilder(
         animation: _flashAnimation,
         builder: (context, child) {
           return Container(
             decoration: BoxDecoration(
               color: AppColors.backgroundCard,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: signal != null ? signal.action.color.withOpacity(0.5) : AppColors.borderColor,
+                width: 1,
               ),
               boxShadow: [
                 if (_flashAnimation.value != Colors.transparent && _flashAnimation.value != null)
@@ -173,68 +139,80 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // Compressed padding
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              // LOGICAL CANVAS: Wider than it is tall (200x80) to maximize density
+              width: 200,
+              height: 80,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.pair.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  if (signal != null)
-                    _CompactBadge(label: signal.timeframe.displayName, color: AppColors.primaryBlue),
-                ],
-              ),
-              const Spacer(),
-              if (signal != null) ...[
-                Text(
-                  signal.action.name.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: signal.action.color,
+                  // Row 1: Pair and TF
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      PairFlag(pair: widget.pair, currentAction: signal?.action, fontSize: 18),
+                      if (signal != null)
+                        _CompactBadge(label: signal.timeframe.displayName, color: AppColors.primaryBlue),
+                    ],
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        value: _getSafeConfidence(signal),
-                        strokeWidth: 2,
-                        backgroundColor: AppColors.backgroundElevated,
-                        color: signal.action.color,
+                  
+                  // Row 2: Signal Action & Confidence (Compressed)
+                  if (signal != null) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              signal.action.name.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: signal.action.color,
+                                height: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            RegimeBadge(regime: signal.regime),
+                          ],
+                        ),
+                        const SizedBox(width: 20),
+                        ConfidenceRing(confidence: _getSafeConfidence(signal), size: 44),
+                      ],
+                    ),
+                    
+                    // Row 3: Footer (Strategy + Time)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          signal.strategy.displayName.toUpperCase(), 
+                          style: const TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w900)
+                        ),
+                        Text(
+                          _formatTimeAgo(signal.generatedAt),
+                          style: const TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const Expanded(
+                      child: Center(
+                        child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "${_getDisplayConfidence(signal)}% Confidence",
-                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-                    ),
                   ],
-                ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(signal.strategy.displayName, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                    Text(
-                      _formatTimeAgo(signal.generatedAt),
-                      style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ] else ...[
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 20),
-                    child: Text("WAITING", style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -251,21 +229,11 @@ class _SignalCardState extends State<_SignalCard> with SingleTickerProviderState
     }
   }
 
-  int _getDisplayConfidence(BackendSignal sig) {
-    try {
-      double val = sig.confidence;
-      if (val <= 1.0) return (val * 100).toInt();
-      return val.toInt();
-    } catch (e) {
-      return 0;
-    }
-  }
-
   String _formatTimeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return "${diff.inSeconds}s";
-    if (diff.inMinutes < 60) return "${diff.inMinutes}m";
-    return "${diff.inHours}h";
+    if (diff.inSeconds < 60) return "${diff.inSeconds} SEC";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} MIN";
+    return "${diff.inHours} HR";
   }
 }
 
@@ -279,11 +247,14 @@ class _CompactBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withOpacity(0.4)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: color)),
+      child: Text(
+        label.toUpperCase(), 
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.textPrimary, letterSpacing: 0.5)
+      ),
     );
   }
 }

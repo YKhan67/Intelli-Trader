@@ -1,11 +1,9 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'services_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core_services.dart';
 import '../models/models.dart';
 
-part 'engine_provider.g.dart';
-
-@Riverpod(keepAlive: true)
-class EngineState extends _$EngineState {
+/// Manages the Global Engine Start/Stop state.
+class EngineStateNotifier extends Notifier<bool> {
   @override
   bool build() {
     final storage = ref.watch(storageServiceProvider);
@@ -19,8 +17,10 @@ class EngineState extends _$EngineState {
   }
 }
 
-@Riverpod(keepAlive: true)
-class TradingModeState extends _$TradingModeState {
+final engineStateProvider = NotifierProvider<EngineStateNotifier, bool>(() => EngineStateNotifier());
+
+/// Manages the Trading Mode (Paper, Live, Seeded).
+class TradingModeStateNotifier extends Notifier<TradingMode> {
   @override
   TradingMode build() {
     final storage = ref.watch(storageServiceProvider);
@@ -34,12 +34,23 @@ class TradingModeState extends _$TradingModeState {
   }
 }
 
-@Riverpod(keepAlive: true)
-class ActivePairsState extends _$ActivePairsState {
+final tradingModeStateProvider = NotifierProvider<TradingModeStateNotifier, TradingMode>(() => TradingModeStateNotifier());
+
+/// Manages the list of Active Trading Pairs.
+class ActivePairsStateNotifier extends Notifier<List<CurrencyPair>> {
   @override
   List<CurrencyPair> build() {
     final storage = ref.watch(storageServiceProvider);
-    return storage.getActivePairs();
+    final active = storage.getActivePairs();
+    
+    // MIGRATION LOGIC: Ensure BTCEUR is added if it's missing from existing settings
+    if (!active.contains(CurrencyPair.btceur)) {
+      final updated = [...active, CurrencyPair.btceur];
+      storage.saveActivePairs(updated);
+      return updated;
+    }
+    
+    return active;
   }
 
   Future<void> setPairs(List<CurrencyPair> pairs) async {
@@ -49,11 +60,12 @@ class ActivePairsState extends _$ActivePairsState {
   }
 }
 
-@Riverpod(keepAlive: true)
-class RiskSettingsState extends _$RiskSettingsState {
+final activePairsStateProvider = NotifierProvider<ActivePairsStateNotifier, List<CurrencyPair>>(() => ActivePairsStateNotifier());
+
+/// Manages Global Risk Settings (Legacy/Fallback).
+class RiskSettingsStateNotifier extends Notifier<Map<String, double>> {
   @override
   Map<String, double> build() {
-    // Default values
     return {
       'min_rr_ratio': 1.5,
       'max_risk_per_trade': 0.01,
@@ -64,3 +76,5 @@ class RiskSettingsState extends _$RiskSettingsState {
     state = {...state, key: value};
   }
 }
+
+final riskSettingsStateProvider = NotifierProvider<RiskSettingsStateNotifier, Map<String, double>>(() => RiskSettingsStateNotifier());

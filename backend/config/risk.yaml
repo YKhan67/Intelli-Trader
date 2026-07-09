@@ -7,9 +7,9 @@ spread_limits:
   H4: 8.0
   D1: 15.0
 
-max_risk_per_trade: 0.01  # 1%
-max_drawdown_limit: 0.10  # 10%
-min_rr_ratio: 1.5
+max_risk_per_trade: 0.03  # 3%
+max_drawdown_limit: 0.20  # 20%
+min_rr_ratio: 1.1
 
 mode_multipliers:
   aggressive: 2.0

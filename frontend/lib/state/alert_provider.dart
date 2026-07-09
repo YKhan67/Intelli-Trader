@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'services_provider.dart';
+import 'core_services.dart';
 import '../models/models.dart';
 
 part 'alert_provider.g.dart';

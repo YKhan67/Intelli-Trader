@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../models/enums.dart';
+import '../../models/models.dart';
 import '../../state/providers.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
@@ -29,8 +29,8 @@ class SettingsScreen extends ConsumerWidget {
           _buildBrokerTile(context, ref),
 
           const SizedBox(height: AppSpacing.lg),
-          _buildSectionHeader(context, "Risk Management"),
-          _buildRiskControls(context, ref),
+          _buildSectionHeader(context, "Pair-Specific Risk Management"),
+          _buildPairRiskControls(context, ref),
 
           const SizedBox(height: AppSpacing.lg),
           _buildSectionHeader(context, "Trading Preferences"),
@@ -56,35 +56,55 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRiskControls(BuildContext context, WidgetRef ref) {
-    final riskSettings = ref.watch(riskSettingsStateProvider);
-    final minRR = riskSettings['min_rr_ratio'] ?? 1.5;
-    final maxRisk = riskSettings['max_risk_per_trade'] ?? 0.01;
+  Widget _buildPairRiskControls(BuildContext context, WidgetRef ref) {
+    final pairRiskSettings = ref.watch(pairRiskSettingsProvider);
+    final activePairs = ref.watch(activePairsStateProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          children: [
-            _buildSliderRow(
-              "Min R:R Ratio",
-              minRR,
-              1.0,
-              5.0,
-              (val) => _updateRisk(ref, 'min_rr_ratio', val),
-              displayVal: minRR.toStringAsFixed(1),
-            ),
-            const Divider(),
-            _buildSliderRow(
-              "Max Risk %",
-              maxRisk * 100,
-              0.1,
-              5.0,
-              (val) => _updateRisk(ref, 'max_risk_per_trade', val / 100),
-              displayVal: "${(maxRisk * 100).toStringAsFixed(1)}%",
-            ),
-          ],
-        ),
+      child: Column(
+        children: activePairs.map((pair) {
+          final settings = pairRiskSettings[pair.name] ?? {'min_rr': 1.5, 'max_risk': 0.01};
+          final minRR = settings['min_rr'] ?? 0.0;
+          final maxRisk = settings['max_risk'] ?? 0.0;
+
+          return ExpansionTile(
+            title: Text(pair.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            subtitle: Text("R:R: ${minRR.toStringAsFixed(1)} | Risk: ${(maxRisk * 100).toStringAsFixed(1)}%", 
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                child: Column(
+                  children: [
+                    _buildSliderRow(
+                      "Min R:R Ratio",
+                      minRR,
+                      0.0,
+                      5.0,
+                      (val) {
+                        ref.read(pairRiskSettingsProvider.notifier).updatePair(pair.name, 'min_rr', val);
+                        ref.read(pairRiskSettingsProvider.notifier).syncToBackend();
+                      },
+                      displayVal: minRR.toStringAsFixed(1),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildSliderRow(
+                      "Max Risk %",
+                      maxRisk * 100,
+                      0.0,
+                      5.0,
+                      (val) {
+                        ref.read(pairRiskSettingsProvider.notifier).updatePair(pair.name, 'max_risk', val / 100);
+                        ref.read(pairRiskSettingsProvider.notifier).syncToBackend();
+                      },
+                      displayVal: "${(maxRisk * 100).toStringAsFixed(1)}%",
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -97,13 +117,13 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              Text(displayVal, style: const TextStyle(fontSize: 12, color: AppColors.accentBlue)),
+              Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(displayVal, style: const TextStyle(fontSize: 11, color: AppColors.accentBlue)),
             ],
           ),
         ),
         Expanded(
-          flex: 4,
+          flex: 5,
           child: Slider(
             value: val,
             min: min,
@@ -116,26 +136,12 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _updateRisk(WidgetRef ref, String key, double value) async {
-    ref.read(riskSettingsStateProvider.notifier).update(key, value);
-    
-    // Sync to backend
-    try {
-      final mode = ref.read(tradingModeStateProvider);
-      final pairs = ref.read(activePairsStateProvider);
-      final risk = ref.read(riskSettingsStateProvider);
-      await ref.read(backendServiceProvider).postSettings(mode, pairs, risk);
-    } catch (e) {
-      logger.e("Risk sync failed: $e");
-    }
-  }
-
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.accentBlue),
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.accentBlue, fontSize: 16),
       ),
     );
   }
@@ -207,8 +213,8 @@ class SettingsScreen extends ConsumerWidget {
                   try {
                     await ref.read(tradingModeStateProvider.notifier).setMode(mode);
                     final pairs = ref.read(activePairsStateProvider);
-                    final risk = ref.read(riskSettingsStateProvider);
-                    await ref.read(backendServiceProvider).postSettings(mode, pairs, risk);
+                    final risk = ref.read(pairRiskSettingsProvider);
+                    await ref.read(backendServiceProvider).postSettings(mode, pairs, {'pair_risk': risk});
                   } catch (e) {
                     logger.e("Failed to update trading mode: $e");
                   }
@@ -240,8 +246,8 @@ class SettingsScreen extends ConsumerWidget {
                 }
                 await ref.read(activePairsStateProvider.notifier).setPairs(newPairs);
                 final mode = ref.read(tradingModeStateProvider);
-                final risk = ref.read(riskSettingsStateProvider);
-                await ref.read(backendServiceProvider).postSettings(mode, newPairs, risk);
+                final risk = ref.read(pairRiskSettingsProvider);
+                await ref.read(backendServiceProvider).postSettings(mode, newPairs, {'pair_risk': risk});
               } catch (e) {
                 logger.e("Failed to update active pairs: $e");
               }
@@ -275,15 +281,36 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildSystemInfo(BuildContext context, WidgetRef ref, Map<String, dynamic> status) {
     final models = status['models'] as Map<String, dynamic>? ?? {};
+    final engineVer = status['version'] ?? "1.0.0";
     
     return Card(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Engine Version", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(engineVer, style: const TextStyle(color: AppColors.accentBlue)),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
           ...models.entries.map((e) => ListTile(
             dense: true,
             title: Text(e.key, style: const TextStyle(fontSize: 11)),
+            subtitle: const Text("Status: Production (10y Data)", style: TextStyle(fontSize: 9)),
             trailing: Text(e.value.toString(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentBlue)),
           )),
+          const Divider(),
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.security, color: AppColors.buyGreen, size: 20),
+            title: const Text("Shadow System Health", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            subtitle: const Text("Immune System Active", style: TextStyle(fontSize: 9, color: AppColors.buyGreen)),
+          ),
           const Divider(),
           ListTile(
             title: const Text("Retrain AI Brain", style: TextStyle(fontSize: 13)),

@@ -7,82 +7,72 @@ logger = logging.getLogger("PositionSizer")
 class PositionSizer:
     def __init__(self, config: Dict[str, Any], pairs_config: Dict[str, Any]):
         self.config = config
-        self.pairs_config = {p['symbol']: p for p in pairs_config['pairs']}
+        self.pairs_config = {p['symbol'].upper(): p for p in pairs_config['pairs']}
 
     def calculate_lot_size(self, 
                           pair: str, 
                           account_balance: float, 
-                          stop_loss_pips: float, 
-                          win_rate: float,
+                          stop_loss_distance: float, 
+                          risk_scale: float = 1.0,
                           trading_mode: str = "normal",
                           consecutive_losses: int = 0,
                           consecutive_wins: int = 0) -> float:
         """
-        Calculates position size in lots.
+        Institutional Position Sizing.
+        Uses absolute price distance ($5.00) instead of 'Pips' for cross-asset accuracy.
         """
-        if stop_loss_pips <= 0:
+        if stop_loss_distance <= 0:
             return 0.0
 
-        pair_info = self.pairs_config.get(pair)
+        pair_up = pair.upper()
+        pair_info = self.pairs_config.get(pair_up)
         if not pair_info:
-            logger.error(f"Pair {pair} not found in pairs config")
+            logger.error(f"Pair {pair_up} not found in pairs config")
             return 0.0
 
-        # 1. Base Risk Amount
+        # 1. Base Risk Amount (User Setting from Redis/Config)
         risk_pct = self.config.get('max_risk_per_trade', 0.01)
-        
-        # 2. Kelly Criterion Adjustment (Simplified)
-        # Kelly % = W - [(1 - W) / R] 
-        # For simplicity, we use win_rate to scale the base risk
-        # if win_rate > 0.5, we might increase risk slightly, but here we just use it for Kelly-like adjustment
-        # We'll use a conservative fractional Kelly (e.g., 0.2 of Kelly)
-        # For now, let's just use it as a simple multiplier if win_rate is known
-        if win_rate > 0:
-            kelly_adj = max(0.5, min(1.5, win_rate / 0.5))
-            risk_pct *= kelly_adj
-
         risk_amount = account_balance * risk_pct
 
-        # 3. Mode Multipliers
+        # 2. Institutional Multipliers
+        # Applies global scale (Risk %) AND local scale (e.g. 50% reduction for correlation)
+        risk_amount *= risk_scale
+
+        # 3. Mode Multipliers (Conservative / Aggressive)
         mode_multipliers = self.config.get('mode_multipliers', {})
-        multiplier = mode_multipliers.get(trading_mode, 1.0)
-        risk_amount *= multiplier
+        risk_amount *= mode_multipliers.get(trading_mode, 1.0)
 
-        # 4. Streak Adjustments
-        streak_cfg = self.config.get('streak_adjustments', {})
-        if consecutive_losses >= streak_cfg.get('loss_streak_threshold', 3):
-            risk_amount *= streak_cfg.get('loss_reduction', 0.5)
-            logger.info(f"Reducing risk by 50% due to {consecutive_losses} consecutive losses")
-        elif consecutive_wins >= streak_cfg.get('win_streak_threshold', 5):
-            risk_amount *= streak_cfg.get('win_increase', 1.25)
-            logger.info(f"Increasing risk by 25% due to {consecutive_wins} consecutive wins")
+        # 4. Streak Mitigation
+        if consecutive_losses >= 3:
+            risk_amount *= 0.5 # Force-halve risk on losing streaks
 
-        # 5. Pip Value Calculation
-        # risk_amount = lot_size * stop_loss_pips * pip_value_per_lot
-        # lot_size = risk_amount / (stop_loss_pips * pip_value_per_lot)
-        pip_value = pair_info.get('pip_value', 10.0)
-        
-        if stop_loss_pips * pip_value == 0:
-            return 0.0
-            
-        lot_size = risk_amount / (stop_loss_pips * pip_value)
+        # 5. Contract Value Calibration
+        # We calculate: How much USD do we profit per $1.00 move per 1.0 lot?
+        if "XAU" in pair_up or "GOLD" in pair_up:
+            price_move_value = 100.0 # Standard Gold Contract
+        elif "BTC" in pair_up:
+            price_move_value = 1.0 # 1 BTC per lot
+        elif "JPY" in pair_up:
+            price_move_value = 915.0 # USDJPY approx move value
+        else:
+            price_move_value = 100000.0 # Standard 100k Forex Contract
 
-        # 6. Apply Limits
+        # 6. The Calculation
+        # lot_size = risk_usd / (move_distance_usd * unit_value)
+        lot_size = risk_amount / (stop_loss_distance * price_move_value)
+
+        # 7. Apply Broker Limits
         min_lot = pair_info.get('min_lot', 0.01)
         max_lot = pair_info.get('max_lot', 10.0)
         lot_step = pair_info.get('lot_step', 0.01)
 
         lot_size = max(0.0, lot_size)
-        
-        # Round to lot_step
         lot_size = math.floor(lot_size / lot_step) * lot_step
         
         if lot_size < min_lot:
-            logger.warning(f"Calculated lot size {lot_size} below min_lot {min_lot}. Setting to 0.")
             return 0.0
             
         if lot_size > max_lot:
-            logger.warning(f"Calculated lot size {lot_size} above max_lot {max_lot}. Capping.")
             lot_size = max_lot
 
         return round(lot_size, 2)

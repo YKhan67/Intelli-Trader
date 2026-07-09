@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'services_provider.dart';
+import 'core_services.dart';
 import '../brokers/broker_factory.dart';
 import '../models/models.dart';
 
@@ -44,37 +44,74 @@ Future<Map<String, dynamic>> systemStatus(SystemStatusRef ref) async {
 
 @riverpod
 class BackendConnection extends _$BackendConnection {
+  Timer? _reconnectTimer;
+
   @override
-  ConnectionState build() => ConnectionState();
+  ConnectionState build() {
+    _startHeartbeat();
+    ref.onDispose(() => _reconnectTimer?.cancel());
+    return ConnectionState();
+  }
+
+  void _startHeartbeat() {
+    _reconnectTimer?.cancel();
+    // LOGICAL FIX: Proactive heartbeat to sync REST and WebSocket states
+    _reconnectTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (state.status != ConnectionStatus.connected) {
+        await connect();
+      }
+    });
+  }
 
   Future<void> connect() async {
-    state = state.copyWith(status: ConnectionStatus.connecting, isLoading: true);
+    final storage = ref.read(storageServiceProvider);
+    final config = await storage.getBackendConfig();
+    final backendUrl = config['url'];
+    
+    if (backendUrl == null) return;
+
+    // Don't show loading on background retries
+    if (state.status == ConnectionStatus.disconnected) {
+       state = state.copyWith(status: ConnectionStatus.connecting, isLoading: true);
+    }
+
     try {
       final backend = ref.read(backendServiceProvider);
       final status = await backend.getStatus();
+      
       if (status.isNotEmpty) {
         state = state.copyWith(
           status: ConnectionStatus.connected,
           lastConnected: DateTime.now(),
           isLoading: false,
         );
+        
+        // LOGICAL FIX: Confirmation of REST status triggers WebSocket bridge
+        final ws = ref.read(webSocketServiceProvider);
+        if (!ws.isConnected) {
+          ws.connect(backendUrl);
+        }
       } else {
-        state = state.copyWith(
-          status: ConnectionStatus.error, 
-          errorMessage: "Backend unavailable",
-          isLoading: false,
-        );
+        _handleFailure("Empty status response");
       }
     } catch (e) {
-      state = state.copyWith(
-        status: ConnectionStatus.error, 
-        errorMessage: e.toString(),
-        isLoading: false,
-      );
+      _handleFailure(e.toString());
     }
   }
 
+  void _handleFailure(String msg) {
+     state = state.copyWith(
+        status: ConnectionStatus.disconnected, 
+        errorMessage: msg,
+        isLoading: false,
+      );
+      // Ensure WS is cleaned up on REST failure
+      ref.read(webSocketServiceProvider).dispose();
+  }
+
   void disconnect() {
+    _reconnectTimer?.cancel();
+    ref.read(webSocketServiceProvider).dispose();
     state = ConnectionState();
   }
 }

@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forex_ai_frontend/models/models.dart';
-import 'package:forex_ai_frontend/state/providers.dart';
+import 'package:forex_ai_frontend/state/alert_provider.dart';
+import 'package:forex_ai_frontend/state/core_services.dart';
 import 'package:forex_ai_frontend/theme/colors.dart';
 import 'package:forex_ai_frontend/utils/logger.dart';
 
 class AlertHandlerService {
   final Ref _ref;
-  StreamSubscription? _subscription;
   GlobalKey<ScaffoldMessengerState>? _scaffoldKey;
   NavigatorState? _navigator;
 
@@ -17,11 +17,13 @@ class AlertHandlerService {
   void init(GlobalKey<ScaffoldMessengerState> scaffoldKey, NavigatorState navigator) {
     _scaffoldKey = scaffoldKey;
     _navigator = navigator;
+    logger.i("Alert Handler Service Initialized and Listening...");
     
-    logger.i("Alert Handler Service Initialized");
-    
-    _subscription = _ref.read(alertStreamProvider).listen((alert) {
-      _handleAlert(alert);
+    // Listen to the stream via the ref
+    _ref.listen(alertStreamProvider, (prev, next) {
+      if (next.hasValue) {
+        _handleAlert(next.value!);
+      }
     });
   }
 
@@ -29,7 +31,7 @@ class AlertHandlerService {
     // 1. Local Notification
     await _ref.read(notificationServiceProvider).showAlert(alert);
 
-    // 2. UI Feedback based on severity
+    // 2. UI Feedback
     switch (alert.severity) {
       case AlertSeverity.critical:
         _showCriticalDialog(alert);
@@ -42,7 +44,6 @@ class AlertHandlerService {
         break;
       case AlertSeverity.low:
       default:
-        // Optional: show a small toast or just notification
         break;
     }
   }
@@ -56,11 +57,6 @@ class AlertHandlerService {
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: "DISMISS",
-          textColor: Colors.white70,
-          onPressed: () {},
-        ),
       ),
     );
   }
@@ -85,17 +81,12 @@ class AlertHandlerService {
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.sellRed),
-            onPressed: () => Navigator.pop(context),
-            child: const Text("ACKNOWLEDGE & DISMISS"),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("ACKNOWLEDGE"),
           ),
         ],
       ),
     );
-  }
-
-  void stop() {
-    _subscription?.cancel();
-    _subscription = null;
   }
 }
 

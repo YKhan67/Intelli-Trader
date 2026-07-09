@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'tabs/sentiment_tab.dart';
-import 'tabs/news_feed_tab.dart';
-import '../../theme/colors.dart';
-import '../../theme/spacing.dart';
-import '../../state/providers.dart';
+import 'package:forex_ai_frontend/screens/news/tabs/sentiment_tab.dart';
+import 'package:forex_ai_frontend/screens/news/tabs/news_feed_tab.dart';
+import 'package:forex_ai_frontend/theme/colors.dart';
+import 'package:forex_ai_frontend/theme/spacing.dart';
+import 'package:forex_ai_frontend/state/providers.dart';
+import 'package:forex_ai_frontend/models/models.dart';
 
 class NewsScreen extends ConsumerWidget {
   const NewsScreen({super.key});

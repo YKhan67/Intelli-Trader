@@ -1,6 +1,7 @@
 import pandas as pd
 import yaml
 import os
+import logging
 from typing import List, Dict, Any
 from sqlalchemy import select, insert, update, and_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -13,6 +14,8 @@ from .fair_value_gaps import detect_fvgs
 from .structure import detect_structure
 from .liquidity import detect_liquidity
 
+logger = logging.getLogger("SMCManager")
+
 class SMCManager:
     def __init__(self):
         config_path = os.path.join(os.path.dirname(__file__), "../../config/indicators.yaml")
@@ -21,17 +24,20 @@ class SMCManager:
 
     async def update_zones(self, pair: str, timeframe: str, lookback_bars: int = 200):
         """
-        Detects and updates all SMC zones for a given pair/timeframe.
+        Detects and updates all SMC zones. 
+        Optimized for large historical data processing.
         """
         async with AsyncSessionLocal() as session:
-            # 1. Fetch Data (Price + Indicators)
-            # We need indicators for ATR (used in OB detection)
+            # 1. Fetch Pair ID
+            stmt_pair = select(CurrencyPairDB.id).where(CurrencyPairDB.symbol == pair)
+            pair_id = (await session.execute(stmt_pair)).scalar()
+            if not pair_id: return []
+
+            # 2. Fetch Data (Price + Indicators)
             stmt = select(OHLCVBarDB, IndicatorDB.data).join(
                 IndicatorDB, OHLCVBarDB.id == IndicatorDB.bar_id
-            ).join(
-                CurrencyPairDB, OHLCVBarDB.pair_id == CurrencyPairDB.id
             ).where(
-                and_(CurrencyPairDB.symbol == pair, OHLCVBarDB.timeframe == timeframe)
+                and_(OHLCVBarDB.pair_id == pair_id, OHLCVBarDB.timeframe == timeframe)
             ).order_by(OHLCVBarDB.timestamp.desc()).limit(lookback_bars)
             
             result = await session.execute(stmt)
@@ -49,11 +55,7 @@ class SMCManager:
             indicators = pd.DataFrame([r[1] for r in rows])
             indicators.index = df.index
 
-            # 2. Get Pair ID
-            stmt_pair = select(CurrencyPairDB.id).where(CurrencyPairDB.symbol == pair)
-            pair_id = (await session.execute(stmt_pair)).scalar()
-
-            # 3. Detect Zones
+            # 3. Detect Zones (Pattern Matching)
             ob_zones = detect_order_blocks(df, indicators, self.config.get('order_blocks', {}))
             fvg_zones = detect_fvgs(df, self.config.get('fair_value_gaps', {}))
             structure_zones = detect_structure(df, self.config.get('structure', {}))
@@ -61,36 +63,33 @@ class SMCManager:
 
             all_detected = ob_zones + fvg_zones + structure_zones + liq_zones
             
-            # 4. Mitigation Logic
-            # Check existing active zones in DB
-            stmt_active = select(SMCZoneDB).where(
-                and_(SMCZoneDB.pair_id == pair_id, SMCZoneDB.timeframe == timeframe, SMCZoneDB.is_active == True)
-            )
-            active_zones = (await session.execute(stmt_active)).scalars().all()
-            
+            # 4. Mitigation Logic (Fast Batch Update)
             current_price = df['close'].iloc[-1]
-            for zone in active_zones:
-                # If price enters the zone (Mitigation)
-                if zone.price_low <= current_price <= zone.price_high:
-                    zone.is_active = False
-                    zone.is_mitigated = True
+            stmt_mitigate = update(SMCZoneDB).where(
+                and_(
+                    SMCZoneDB.pair_id == pair_id,
+                    SMCZoneDB.timeframe == timeframe,
+                    SMCZoneDB.is_active == True,
+                    SMCZoneDB.price_low <= current_price,
+                    SMCZoneDB.price_high >= current_price
+                )
+            ).values(is_active=False, is_mitigated=True)
+            await session.execute(stmt_mitigate)
             
-            # 5. Save New Zones
-            for z in all_detected:
-                # Add metadata
-                z['pair_id'] = pair_id
-                z['timeframe'] = timeframe
-                z['is_active'] = True
-                z['is_mitigated'] = False
+            # 5. Save New Zones (Bulk)
+            if all_detected:
+                db_ready = []
+                for z in all_detected:
+                    z['pair_id'] = pair_id
+                    z['timeframe'] = timeframe
+                    z['is_active'] = True
+                    z['is_mitigated'] = False
+                    db_ready.append(z)
                 
-                # Simple deduplication based on type and formation time
-                # In a real system, use a more robust unique constraint
-                session.add(SMCZoneDB(**z))
+                # Use insert(..).values(..) for async bulk performance
+                await session.execute(insert(SMCZoneDB), db_ready)
 
             await session.commit()
-            print(f"SMC Update for {pair} {timeframe}: {len(all_detected)} new zones detected.")
-            
-            # 6. Return Active Zones
             return await self.get_active_zones(pair, timeframe)
 
     async def get_active_zones(self, pair: str, timeframe: str) -> List[SMCZone]:

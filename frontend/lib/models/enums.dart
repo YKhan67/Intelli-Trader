@@ -12,7 +12,8 @@ enum CurrencyPair {
   nzdusd,
   usdcad,
   xauusd,
-  btcusd;
+  btcusd,
+  btceur;
 
   String get displayName => name.toUpperCase();
 

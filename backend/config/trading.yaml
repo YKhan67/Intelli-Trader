@@ -20,11 +20,15 @@ active_pairs:
   - NZDUSD
   - XAUUSD
   - BTCUSD
+  - BTCEUR
 
 pair_metadata:
   BTCUSD:
     pip_size: 1.0
     pip_value: 1.0
+  BTCEUR:
+    pip_size: 1.0
+    pip_value: 1.08
   XAUUSD:
     pip_size: 0.01
     pip_value: 1.0

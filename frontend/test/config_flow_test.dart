@@ -48,12 +48,13 @@ void main() {
   test('Settings changes sync to backend', () async {
     final mode = TradingMode.aggressive;
     final pairs = [CurrencyPair.eurusd, CurrencyPair.gbpusd];
+    final risk = {'min_rr_ratio': 1.5, 'max_risk_per_trade': 0.01};
     
-    when(mockBackend.postSettings(mode, pairs)).thenAnswer((_) async => null);
+    when(mockBackend.postSettings(mode, pairs, risk)).thenAnswer((_) async => null);
     
     // Simulate SettingsScreen change
-    await mockBackend.postSettings(mode, pairs);
+    await mockBackend.postSettings(mode, pairs, risk);
     
-    verify(mockBackend.postSettings(mode, pairs)).called(1);
+    verify(mockBackend.postSettings(mode, pairs, risk)).called(1);
   });
 }
