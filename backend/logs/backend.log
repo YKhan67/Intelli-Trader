@@ -109,3 +109,148 @@
 2026-07-10 01:09:51,235 - PriceDownloader - INFO -       [DONE] XAUUSD institutional resample finished.
 2026-07-10 01:09:53,326 - DecisionEngine - INFO - HOLD_DECISION | pair=XAUUSD | raw_action=HOLD | final_conf=0.1576 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
 2026-07-10 01:09:53,345 - LiveEngine - INFO - --- Cycle Complete. Waiting 1 minute ---
+2026-07-10 01:30:52,634 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-07-10 01:30:52,673 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-07-10 01:30:52,675 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-07-10 01:30:52,676 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-07-10 01:31:25,428 - asyncio - ERROR - Exception in callback BaseProactorEventLoop._start_serving.<locals>.loop(<_OverlappedF...0.1', 59238))>) at C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py:841
+handle: <Handle BaseProactorEventLoop._start_serving.<locals>.loop(<_OverlappedF...0.1', 59238))>) at C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py:841>
+Traceback (most recent call last):
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 856, in loop
+    self._make_socket_transport(
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 647, in _make_socket_transport
+    return _ProactorSocketTransport(self, sock, protocol, waiter,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 613, in __init__
+    super().__init__(loop, sock, protocol, waiter, extra, server)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 189, in __init__
+    super().__init__(loop, sock, protocol, waiter, extra, server)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 335, in __init__
+    super().__init__(*args, **kw)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 66, in __init__
+    self._server._attach()
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 296, in _attach
+    assert self._sockets is not None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+2026-07-10 01:31:25,435 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\Me\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-07-10 01:31:25,642 - SentimentAggregator - INFO - Sentiment aggregation matrix updated.
+2026-07-10 01:31:28,460 - LiveEngine - INFO - --- Starting Multi-Timeframe AI Cycle (10-Pair Parallel) ---
+2026-07-10 01:31:32,023 - PriceDownloader - INFO - Resampling AUDUSD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,033 - PriceDownloader - INFO -       [DONE] AUDUSD institutional resample finished.
+2026-07-10 01:31:32,034 - PriceDownloader - INFO - Resampling NZDUSD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,041 - PriceDownloader - INFO -       [DONE] NZDUSD institutional resample finished.
+2026-07-10 01:31:32,046 - PriceDownloader - INFO - Resampling USDJPY from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,053 - PriceDownloader - INFO -       [DONE] USDJPY institutional resample finished.
+2026-07-10 01:31:32,054 - PriceDownloader - INFO - Resampling XAUUSD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,062 - PriceDownloader - INFO -       [DONE] XAUUSD institutional resample finished.
+2026-07-10 01:31:32,062 - PriceDownloader - INFO - Resampling USDCAD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,071 - PriceDownloader - INFO -       [DONE] USDCAD institutional resample finished.
+2026-07-10 01:31:32,071 - PriceDownloader - INFO - Resampling GBPUSD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,080 - PriceDownloader - INFO -       [DONE] GBPUSD institutional resample finished.
+2026-07-10 01:31:32,080 - PriceDownloader - INFO - Resampling EURUSD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,088 - PriceDownloader - INFO -       [DONE] EURUSD institutional resample finished.
+2026-07-10 01:31:32,088 - PriceDownloader - INFO - Resampling USDCHF from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,096 - PriceDownloader - INFO -       [DONE] USDCHF institutional resample finished.
+2026-07-10 01:31:32,097 - PriceDownloader - INFO - Resampling BTCEUR from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,104 - PriceDownloader - INFO -       [DONE] BTCEUR institutional resample finished.
+2026-07-10 01:31:32,105 - PriceDownloader - INFO - Resampling BTCUSD from 2026-06-19 02:31:32 (Window: 500h)...
+2026-07-10 01:31:32,113 - PriceDownloader - INFO -       [DONE] BTCUSD institutional resample finished.
+2026-07-10 01:31:32,963 - DecisionEngine - INFO - HOLD_DECISION | pair=BTCUSD | raw_action=HOLD | final_conf=0.1501 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:33,096 - PriceDownloader - INFO - Resampling BTCUSD from 2026-06-19 02:31:33 (Window: 500h)...
+2026-07-10 01:31:33,105 - PriceDownloader - INFO -       [DONE] BTCUSD institutional resample finished.
+2026-07-10 01:31:35,039 - DecisionEngine - INFO - HOLD_DECISION | pair=BTCEUR | raw_action=HOLD | final_conf=0.1477 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,272 - DecisionEngine - INFO - HOLD_DECISION | pair=USDCHF | raw_action=HOLD | final_conf=0.1856 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,274 - DecisionEngine - INFO - HOLD_DECISION | pair=NZDUSD | raw_action=HOLD | final_conf=0.1663 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,275 - DecisionEngine - INFO - HOLD_DECISION | pair=GBPUSD | raw_action=HOLD | final_conf=0.1562 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,277 - DecisionEngine - INFO - HOLD_DECISION | pair=BTCUSD | raw_action=HOLD | final_conf=0.1501 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,279 - PriceDownloader - INFO - Resampling BTCEUR from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,289 - PriceDownloader - INFO -       [DONE] BTCEUR institutional resample finished.
+2026-07-10 01:31:35,291 - DecisionEngine - INFO - HOLD_DECISION | pair=EURUSD | raw_action=HOLD | final_conf=0.1799 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,313 - DecisionEngine - INFO - HOLD_DECISION | pair=USDJPY | raw_action=HOLD | final_conf=0.2011 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,316 - DecisionEngine - INFO - HOLD_DECISION | pair=XAUUSD | raw_action=HOLD | final_conf=0.1576 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,444 - DecisionEngine - INFO - HOLD_DECISION | pair=AUDUSD | raw_action=HOLD | final_conf=0.1578 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,464 - DecisionEngine - INFO - HOLD_DECISION | pair=USDCAD | raw_action=HOLD | final_conf=0.2014 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:35,919 - PriceDownloader - INFO - Resampling XAUUSD from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,929 - PriceDownloader - INFO -       [DONE] XAUUSD institutional resample finished.
+2026-07-10 01:31:35,929 - PriceDownloader - INFO - Resampling EURUSD from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,937 - PriceDownloader - INFO -       [DONE] EURUSD institutional resample finished.
+2026-07-10 01:31:35,938 - PriceDownloader - INFO - Resampling USDJPY from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,946 - PriceDownloader - INFO -       [DONE] USDJPY institutional resample finished.
+2026-07-10 01:31:35,946 - PriceDownloader - INFO - Resampling BTCUSD from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,954 - PriceDownloader - INFO -       [DONE] BTCUSD institutional resample finished.
+2026-07-10 01:31:35,955 - PriceDownloader - INFO - Resampling USDCHF from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,964 - PriceDownloader - INFO -       [DONE] USDCHF institutional resample finished.
+2026-07-10 01:31:35,964 - PriceDownloader - INFO - Resampling GBPUSD from 2026-06-19 02:31:35 (Window: 500h)...
+2026-07-10 01:31:35,972 - PriceDownloader - INFO -       [DONE] GBPUSD institutional resample finished.
+2026-07-10 01:31:36,377 - PriceDownloader - INFO - Resampling USDCAD from 2026-06-19 02:31:36 (Window: 500h)...
+2026-07-10 01:31:36,387 - PriceDownloader - INFO -       [DONE] USDCAD institutional resample finished.
+2026-07-10 01:31:36,388 - PriceDownloader - INFO - Resampling AUDUSD from 2026-06-19 02:31:36 (Window: 500h)...
+2026-07-10 01:31:36,396 - PriceDownloader - INFO -       [DONE] AUDUSD institutional resample finished.
+2026-07-10 01:31:36,398 - PriceDownloader - INFO - Resampling NZDUSD from 2026-06-19 02:31:36 (Window: 500h)...
+2026-07-10 01:31:36,407 - PriceDownloader - INFO -       [DONE] NZDUSD institutional resample finished.
+2026-07-10 01:31:39,716 - DecisionEngine - INFO - HOLD_DECISION | pair=XAUUSD | raw_action=HOLD | final_conf=0.1576 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,717 - DecisionEngine - INFO - HOLD_DECISION | pair=USDCHF | raw_action=HOLD | final_conf=0.1856 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,717 - DecisionEngine - INFO - HOLD_DECISION | pair=GBPUSD | raw_action=HOLD | final_conf=0.1562 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,719 - DecisionEngine - INFO - HOLD_DECISION | pair=EURUSD | raw_action=HOLD | final_conf=0.1799 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,726 - DecisionEngine - INFO - HOLD_DECISION | pair=USDJPY | raw_action=HOLD | final_conf=0.2011 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,857 - DecisionEngine - INFO - HOLD_DECISION | pair=AUDUSD | raw_action=HOLD | final_conf=0.1578 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,858 - DecisionEngine - INFO - HOLD_DECISION | pair=NZDUSD | raw_action=HOLD | final_conf=0.1663 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,860 - DecisionEngine - INFO - HOLD_DECISION | pair=USDCAD | raw_action=HOLD | final_conf=0.2014 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,862 - DecisionEngine - INFO - HOLD_DECISION | pair=BTCEUR | raw_action=HOLD | final_conf=0.1477 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,983 - DecisionEngine - INFO - HOLD_DECISION | pair=BTCUSD | raw_action=HOLD | final_conf=0.1501 | min_conf=0.70 | validation_passed=False | failed_checks=['Signal action is HOLD.'] | raw_reason=No clear high-probability setup identified. | lot_size=0.0 | atr=0.000000 | spread_pips=0.0000 | rr=0.0000
+2026-07-10 01:31:39,985 - PriceDownloader - INFO - Resampling AUDUSD from 2026-06-19 02:31:39 (Window: 500h)...
+2026-07-10 01:31:39,994 - PriceDownloader - INFO -       [DONE] AUDUSD institutional resample finished.
+2026-07-10 01:31:39,998 - PriceDownloader - INFO - Resampling EURUSD from 2026-06-19 02:31:39 (Window: 500h)...
+2026-07-10 01:31:40,006 - PriceDownloader - INFO -       [DONE] EURUSD institutional resample finished.
+2026-07-10 01:31:40,006 - PriceDownloader - INFO - Resampling USDJPY from 2026-06-19 02:31:40 (Window: 500h)...
+2026-07-10 01:31:40,016 - PriceDownloader - INFO -       [DONE] USDJPY institutional resample finished.
+2026-07-10 01:31:40,016 - PriceDownloader - INFO - Resampling GBPUSD from 2026-06-19 02:31:40 (Window: 500h)...
+2026-07-10 01:31:40,025 - PriceDownloader - INFO -       [DONE] GBPUSD institutional resample finished.
+2026-07-10 01:31:40,025 - PriceDownloader - INFO - Resampling USDCHF from 2026-06-19 02:31:40 (Window: 500h)...
+2026-07-10 01:31:40,033 - PriceDownloader - INFO -       [DONE] USDCHF institutional resample finished.
+2026-07-10 01:31:40,034 - PriceDownloader - INFO - Resampling XAUUSD from 2026-06-19 02:31:40 (Window: 500h)...
+2026-07-10 01:31:40,042 - PriceDownloader - INFO -       [DONE] XAUUSD institutional resample finished.
+2026-07-10 01:31:40,411 - PriceDownloader - INFO - Resampling NZDUSD from 2026-06-19 02:31:40 (Window: 500h)...
+2026-07-10 01:31:40,424 - PriceDownloader - INFO -       [DONE] NZDUSD institutional resample finished.
+2026-07-10 01:31:40,425 - PriceDownloader - INFO - Resampling BTCEUR from 2026-06-19 02:31:40 (Window: 500h)...
+2026-07-10 01:31:40,433 - PriceDownloader - INFO -       [DONE] BTCEUR institutional resample finished.
+2026-07-10 01:31:42,910 - PriceDownloader - INFO - Resampling USDCAD from 2026-06-19 02:31:42 (Window: 500h)...
+2026-07-10 01:31:42,920 - PriceDownloader - INFO -       [DONE] USDCAD institutional resample finished.
