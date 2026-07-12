@@ -98,7 +98,8 @@ class DecisionEngine:
                             active_zones: Any,
                             account_balance: float,
                             open_trades: Any,
-                            trading_mode: str) -> BackendSignal:
+                            trading_mode: str,
+                            source_timeframe: Optional[str] = None) -> BackendSignal:
         """
         Orchestrates the full decision pipeline for one pair.
         """
@@ -145,7 +146,8 @@ class DecisionEngine:
             current_spread = indicators.get('spread_pips', 1.5)
             tf_selection = await self.timeframe_selector.select(
                 strategy_decision=strategy_decision, regime_result=regime_res,
-                current_spread_pips=current_spread, is_trade_open=len(open_trades) > 0, dt=current_ts
+                current_spread_pips=current_spread, is_trade_open=len(open_trades) > 0, dt=current_ts,
+                current_timeframe=source_timeframe
             )
 
             sentiment_res = await self.sentiment_manager.get_sentiment(pair)

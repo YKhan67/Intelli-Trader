@@ -158,7 +158,8 @@ class ForexAIEngine:
             await self.decision_engine.run_pipeline(
                 pair=pair, df=df, indicators=indicators,
                 active_zones=active_zones, account_balance=account_balance, 
-                open_trades=open_trades, trading_mode="live"
+                open_trades=open_trades, trading_mode="live",
+                source_timeframe=timeframe
             )
         except asyncio.CancelledError: raise
         except Exception as e:

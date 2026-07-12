@@ -31,7 +31,8 @@ class TimeframeSelector:
                      regime_result: MarketRegimeResult, 
                      current_spread_pips: float, 
                      is_trade_open: bool,
-                     dt: datetime = None) -> TimeframeSelection:
+                     dt: datetime = None,
+                     current_timeframe: Optional[str] = None) -> TimeframeSelection:
         """
         Selects the optimal trading timeframe.
         """
@@ -73,16 +74,30 @@ class TimeframeSelector:
         # Sort timeframes by score descending
         sorted_tfs = sorted(allowed_timeframes, key=lambda x: scores.get(x, 0), reverse=True)
         
-        for tf in sorted_tfs:
+        # If the engine already provided a current_timeframe (the indicators dataframe
+        # was calculated for this tf), prefer it when possible to avoid mismatches
+        # between the selected timeframe and the indicators used for risk calculation.
+        if current_timeframe and current_timeframe in allowed_timeframes:
+            score = scores.get(current_timeframe, 0)
+            min_score = self.config.get('minimum_selection_score', 60)
+            if score >= min_score:
+                acceptable, reason = self.spread_checker.is_acceptable(current_timeframe, current_spread_pips)
+                if acceptable:
+                    best_tf = current_timeframe
+                    best_score = score
+
+        if not best_tf:
+            for tf in sorted_tfs:
+                score = scores.get(tf, 0)
             score = scores.get(tf, 0)
             
             # Minimum score check
             min_score = self.config.get('minimum_selection_score', 60)
-            if score < min_score:
-                continue
+                if score < min_score:
+                    continue
                 
             # Spread check
-            acceptable, reason = self.spread_checker.is_acceptable(tf, current_spread_pips)
+                acceptable, reason = self.spread_checker.is_acceptable(tf, current_spread_pips)
             if not acceptable:
                 # Try moving up one timeframe if spread is too high
                 continue
